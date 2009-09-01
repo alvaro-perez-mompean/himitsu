@@ -1,0 +1,555 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ncurses.h>
+
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include "vocab.h"
+
+
+/* Load vocab files into listavocab structure. */
+
+void load_vocab(vocab_t **listavocab) {
+	FILE *vocab;
+	char *homedir = NULL;
+	
+	homedir = (char *)calloc((strlen(getenv("HOME"))+strlen("/.himitsu/save"))+1,sizeof(char));
+	strcpy(homedir,getenv("HOME"));
+	strcpy((homedir+strlen(homedir)),"/.himitsu");
+	vocab = fopen(homedir, "r");
+	if (!vocab)
+		mkdir(homedir,0755);
+	else
+		fclose(vocab);
+	
+	strcpy((homedir+strlen(homedir)),"/save");
+
+	vocab = fopen(homedir, "a");
+	if (!vocab)
+		exit_mem(1,"Error opening vocabulary file.\n");
+	else if (fclose(vocab) != 0)
+		exit_mem(1,"Error closing vocabulary file.");
+
+	vocab = fopen(homedir, "r");
+	if (!vocab)
+		exit_mem(1,"Vocabulary file can't be opened");
+	else
+		add_line(listavocab, vocab,0);
+
+	if (fclose(vocab) != 0) 
+		exit_mem(1,"Error closing vocabulary file.\n");
+	if (homedir)
+		free(homedir);
+	homedir = NULL;
+
+}
+
+
+/* Show list's elements. */
+
+int show_vocab(vocab_t *listavocab, int cat, pantalla_t *pant, bool imprime) {
+
+int resultados = 0;
+	
+	
+wprintw(pant->buffer,"\n");
+if (listavocab) {
+	
+	listavocab = go_to_cat(listavocab,cat);
+	listavocab = listavocab->psiguiente;
+
+	resultados = 0;
+	if (listavocab) {
+		wclear(pant->buffer);
+		pant->ppal_finbuf = getcury(pant->buffer);
+			while (listavocab && !listavocab->pcat) {
+				resultados++;
+				if (imprime) {
+					show_vocab_item(listavocab,pant,resultados);
+					wprintw(pant->buffer,"\n");
+
+				}
+				listavocab = listavocab->psiguiente;					
+        	}
+        	
+	}
+
+}
+
+wprintw(pant->buffer,"\n");
+upgrade_buffer(pant, FALSE);
+
+return resultados;
+}
+
+void show_vocab_item(vocab_t *listavocab, pantalla_t *pant, int resultado) {
+	
+	if (listavocab) {
+		if (listavocab->pkanji)
+			wprintw(pant->buffer,"[%d] %s (%s): %s",resultado,listavocab->pkanji,listavocab->phiragana,listavocab->pmeaning);
+		// Temporaly if to study english irregular verbs.
+		else if (*listavocab->phiragana >= 97 && *listavocab->phiragana <= 122)
+			wprintw(pant->buffer,"[%d] %s: %s",resultado,listavocab->pmeaning,listavocab->phiragana);
+		else
+			wprintw(pant->buffer,"[%d] %s: %s",resultado,listavocab->phiragana,listavocab->pmeaning);     	
+        	
+ 	}
+
+}
+	
+	
+
+/* Show vocab lists and return an int with the number of them. */
+
+int show_cat(vocab_t *listavocab, pantalla_t *pant) {
+
+	int i=0,resultados = 0;
+	
+	vocab_t *nnodos = NULL;
+	//wprintw(pant->ppal,"\n");
+	if (!listavocab) {
+		wprintw(pant->buffer,"There aren't vocabulary lists.\n\n");
+	} else {
+		while (listavocab->panterior)
+			listavocab = listavocab->panterior;
+
+		while (listavocab) {
+			if (listavocab->pcat) {
+				i++;
+				nnodos = listavocab->psiguiente;
+				resultados=0;
+				if (nnodos) {
+					while (nnodos && !nnodos->pcat) {
+						resultados++;
+						nnodos = nnodos->psiguiente;
+					}
+				}
+				wprintw(pant->buffer,"[%d] %s (%d)\n",i,listavocab->pcat,resultados);
+			}
+			listavocab = listavocab->psiguiente;
+		}
+	}
+	wprintw(pant->buffer,"\n");
+	return i;
+}
+
+
+/* This function saves listavocab into a file */
+void save_vocab(vocab_t *listavocab) {
+	FILE *fd;
+	char *homedir = NULL;
+	
+	homedir = (char *)calloc((strlen(getenv("HOME"))+strlen("/.himitsu/save"))+1,sizeof(char));
+	strcpy(homedir,getenv("HOME"));
+	strcpy((homedir+strlen(homedir)),"/.himitsu");
+	fd = fopen(homedir, "r");
+	if (!fd)
+		mkdir(homedir,0755);
+	else
+		fclose(fd);
+
+	strcpy((homedir+strlen(homedir)),"/save");
+	fd=fopen(homedir,"wt");
+	if (!fd)
+		exit_mem(1,"Error saving vocabulary file.");
+
+	if (listavocab) {
+		listavocab = go_to_cat(listavocab, 1);
+		while (listavocab) {
+			if (listavocab->pcat) {
+				fprintf(fd,";;%s\n",listavocab->pcat);
+			} else if (listavocab->pkanji) {
+				fprintf(fd,"&%hu&%s [%s] /%s/\n",listavocab->learning,listavocab->pkanji,listavocab->phiragana,listavocab->pmeaning);
+			} else {
+				fprintf(fd,"&%hu&%s /%s/\n",listavocab->learning,listavocab->phiragana,listavocab->pmeaning);
+			}
+			listavocab = listavocab->psiguiente;
+		}
+	}
+
+	fclose(fd);
+	if (homedir)
+		free(homedir);
+}
+
+
+/* Edit a word */
+
+void edit_vocab(vocab_t *pnodoedit, char secmea[], pantalla_t *pant) {
+
+	char opcion = '0';
+	
+	wprintw(pant->buffer,"\n");
+	while ((opcion != 'y') && (opcion != 'n')) {
+		if (pnodoedit->pkanji)
+			wprintw(pant->buffer,"%s (%s) -> \"%s\" ¿ok? (y/n): ",pnodoedit->pkanji,pnodoedit->phiragana,secmea);
+		else
+			wprintw(pant->buffer,"%s -> %s \"¿ok?\" (y/n): ",pnodoedit->phiragana,secmea);
+		
+		upgrade_buffer(pant, TRUE);
+		opcion = wgetch(pant->ppal);
+		wprintw(pant->buffer,"\n");
+	}
+	
+	if (opcion == 'y') {
+	
+		if (!pnodoedit->pmeaning) {
+			pnodoedit->pmeaning = (char *)malloc ((strlen(secmea)+1)*sizeof(char));
+			if (!pnodoedit->pmeaning)
+				exit_mem(1,"Not enough memory");
+		} else {
+			pnodoedit->pmeaning = (char *)realloc (pnodoedit->pmeaning,(strlen(secmea)+1)*sizeof(char));
+			if (!pnodoedit->pmeaning)
+				exit_mem(1,"Not enough memory");
+		}
+		strcpy(pnodoedit->pmeaning, secmea);
+		wprintw(pant->buffer,"\nRenaming...\n");
+	} else {
+		wprintw(pant->buffer,"\nCancelling...\n");
+	}
+}
+
+
+/* This function checks that the word doesn't exist in the list */
+
+bool add_vocab(vocab_t **listavocab, vocab_t *pnuevonodov, int cat) {
+	bool norepe = true;
+		
+	vocab_t *aux = *listavocab;
+
+	aux = go_to_cat(aux,cat);
+
+
+	if (aux->psiguiente) {
+		aux = aux->psiguiente;
+			while (aux && !aux->pcat && norepe) {
+				if (!aux->pcat) {
+					if ((!aux->pkanji) || (!pnuevonodov->pkanji)) {
+						if ((strstr(aux->phiragana,pnuevonodov->phiragana)) && (strlen(aux->phiragana)) == (strlen(pnuevonodov->phiragana)))
+							norepe = false;
+					} else {
+						if ((strstr(aux->pkanji,pnuevonodov->pkanji)) && (strlen(aux->pkanji)) == (strlen(pnuevonodov->pkanji))) {
+							if ((strstr(aux->phiragana,pnuevonodov->phiragana)) && (strlen(aux->phiragana)) == (strlen(pnuevonodov->phiragana)))
+								norepe = false;
+						}
+					}
+				}
+				aux = aux->psiguiente;
+			}
+	}
+	
+	return norepe;
+
+}
+
+/* Delete a word */
+
+void delete_vocab(vocab_t **listavocab, pantalla_t *pant) {
+
+	char ok='0';
+
+	vocab_t *pnodoelim=*listavocab;
+	vocab_t *aux, *aux2;
+	aux=aux2=NULL;
+	
+	while (ok != 'y' && ok != 'n') {
+		if (pnodoelim->pkanji)
+			wprintw(pant->buffer,"Do you want to delete \"%s (%s): %s\"? (y/n): ",pnodoelim->pkanji,pnodoelim->phiragana, pnodoelim->pmeaning);
+		else
+			wprintw(pant->buffer,"Do you want to delete \"%s: %s\"? (y/n): ",pnodoelim->phiragana, pnodoelim->pmeaning);
+		upgrade_buffer(pant, TRUE);
+		ok = wgetch(pant->ppal);
+		wprintw(pant->buffer,"\n");
+	}
+	
+	if (ok == 'y') {
+		if (pnodoelim->psiguiente && pnodoelim->panterior) {
+			aux = pnodoelim->psiguiente;
+			aux2 = pnodoelim->panterior;
+
+			aux->panterior = aux2;
+			aux2->psiguiente = aux;
+
+		} else if (!pnodoelim->psiguiente && pnodoelim->panterior) {
+			aux = pnodoelim->panterior;
+			aux->psiguiente = NULL;
+			*listavocab = aux;
+		} else if (!pnodoelim->panterior && pnodoelim->psiguiente) {
+			aux = pnodoelim->psiguiente;
+			aux->panterior = NULL;
+		}
+
+		if (!pnodoelim->psiguiente && !pnodoelim->panterior) {
+			*listavocab = NULL;
+		}
+		// Vamos a liberar memoria.
+
+		if (pnodoelim->phiragana) {
+			free(pnodoelim->phiragana);
+			pnodoelim->phiragana = NULL;
+		}
+		if (pnodoelim->pkanji) {
+			free(pnodoelim->pkanji);
+			pnodoelim->pkanji = NULL;
+		}
+		if (pnodoelim->pmeaning) {
+			free(pnodoelim->pmeaning);
+			pnodoelim->pmeaning = NULL;
+		}
+		pnodoelim->psiguiente = NULL;
+		pnodoelim->panterior = NULL;
+		free (pnodoelim);
+
+
+		wprintw(pant->buffer,"Word deleted correctly.\n\n");
+		*listavocab = aux;
+	} else
+		wprintw(pant->buffer,"\nCancelling...\n");
+		
+	
+
+}
+
+
+/* This function creates a new category */
+
+void new_cat(vocab_t **listavocab, char categoria[]) {
+
+	vocab_t *pnuevonodov = NULL;
+	pnuevonodov = (vocab_t *)malloc(sizeof(vocab_t));
+	if (!pnuevonodov)
+		exit_mem(1,"Not enough memory");
+
+	pnuevonodov->pcat = (char *)calloc((strlen(categoria)+1),sizeof(char));
+	if (!pnuevonodov->pcat) 
+		exit_mem(1,"Not enough memory");
+	strcpy(pnuevonodov->pcat,categoria);
+	pnuevonodov->pmeaning = NULL;
+	pnuevonodov->pkanji = NULL;
+	pnuevonodov->phiragana = NULL;
+	pnuevonodov->learning = 0;
+
+	pnuevonodov->panterior = *listavocab;
+	pnuevonodov->psiguiente = NULL;
+
+	if (pnuevonodov->panterior)
+		pnuevonodov->panterior->psiguiente = pnuevonodov;
+	*listavocab = pnuevonodov;
+}
+
+
+/* Delete a category list and its content */
+void delete_cat(vocab_t **listavocab, int categoria, pantalla_t *pant) {
+
+	char conf='0';
+	bool vacia = true;
+
+        vocab_t *pcatelim = *listavocab, *aux, *aux2;
+		pcatelim = go_to_cat(pcatelim,categoria);
+	
+        // Check if list is empty.
+        if (!pcatelim->psiguiente->pcat) {
+			while ((conf != 'y') && (conf != 'n')) {
+				wprintw(pant->buffer,"WARNING! \"%s\" list isn't empthy. Do you want to delete it? (y/n): ",pcatelim->pcat);
+				upgrade_buffer(pant,TRUE);
+				conf = wgetch(pant->ppal);
+				wprintw(pant->buffer,"\n");
+			}
+			vacia = false;
+        }
+
+
+        if (vacia) {
+			wprintw(pant->buffer,"\nDeleting...\n");
+                if (pcatelim->psiguiente && pcatelim->panterior) {
+                        aux = pcatelim->psiguiente;
+                        aux2 = pcatelim->panterior;
+
+                        aux->panterior = aux2;
+                        aux2->psiguiente = aux;
+
+                } else if (!pcatelim->psiguiente && pcatelim->panterior) {
+                        aux = pcatelim->panterior;
+                        aux->psiguiente = NULL;
+                        *listavocab = aux;
+                } else if (!pcatelim->panterior && pcatelim->psiguiente) {
+                        aux = pcatelim->psiguiente;
+                        aux->panterior = NULL;
+                }
+
+                if (!pcatelim->psiguiente && !pcatelim->panterior) {
+                        *listavocab = NULL;
+                }
+			
+			if (pcatelim->pcat) {
+				free(pcatelim->pcat);
+				pcatelim->phiragana = NULL;
+			}
+			pcatelim->psiguiente = NULL;
+			pcatelim->panterior = NULL;
+			free(pcatelim);
+			
+			
+        } else if ((!vacia) && (conf == 'y')) {
+			// Delete a list an its content.
+			wprintw(pant->buffer,"\nDeleting...\n");
+			if (pcatelim->psiguiente && pcatelim->panterior) {
+				aux = pcatelim->panterior;
+				aux2 = pcatelim->psiguiente;
+				while (aux2 && !aux2->pcat) {
+					if (aux2->phiragana) {
+						free(aux2->phiragana);
+						aux2->phiragana = NULL;
+					}
+					if (aux2->pkanji) {
+						free(aux2->pkanji);
+						aux2->pkanji = NULL;
+					}
+					if (aux2->pmeaning) {
+						free(aux2->pmeaning);
+						aux2->pmeaning = NULL;
+					}
+					if (aux2->psiguiente) {
+						aux2 = aux2->psiguiente;
+						free(aux2->panterior);
+					} else {
+						free(aux2);
+						aux2 = NULL;
+					}
+				
+				}
+				// We are over next pcat or over NULL.
+				if (aux2) {
+					aux->psiguiente = aux2;
+					aux2->panterior = aux;
+				} else {
+					aux->psiguiente = NULL;
+					*listavocab = aux;
+				}
+				
+		
+			} else if (!pcatelim->panterior && pcatelim->psiguiente) {
+				aux = pcatelim->psiguiente;
+				while (aux && !aux->pcat) {
+					if (aux->phiragana) {
+						free(aux->phiragana);
+						aux->phiragana = NULL;
+					}
+					if (aux->pkanji) {
+						free(aux->pkanji);
+						aux->pkanji = NULL;
+					}
+					if (aux->pmeaning) {
+						free(aux->pmeaning);
+						aux->pmeaning = NULL;
+					}
+					if (aux->psiguiente) {
+						aux = aux->psiguiente;
+						free(aux->panterior);
+					} else {
+						free(aux);
+						aux = NULL;
+					}
+				}
+				if (aux) {
+					aux->panterior = NULL;
+				} else {
+					*listavocab = NULL;
+				}
+			}
+				
+			
+		} else
+			wprintw(pant->buffer,"\nCancelling...\n"); 
+}
+
+// Return current category.
+int current_cat(vocab_t *listavocab, int cat, bool imprime, WINDOW *menu) {
+	int elementos = 0;
+	
+	listavocab = go_to_cat(listavocab,cat);
+	
+	if (imprime)
+		mvwprintw(menu,2,1,"%s ",listavocab->pcat);
+	if (listavocab->psiguiente) {
+		listavocab = listavocab->psiguiente;
+		elementos = 0;
+		while (listavocab && !listavocab->pcat) {
+			elementos++;
+			listavocab = listavocab->psiguiente;
+		}
+	}
+	if (imprime)
+		wprintw(menu,"(%d)\n",elementos);
+	
+	return elementos;
+}
+
+// Return a pointer to a category.
+vocab_t * go_to_cat(vocab_t *listavocab, int cat) {
+
+	int i = 0;
+	
+	// We are at the beginning.
+	while (listavocab->panterior)
+		listavocab = listavocab->panterior;
+
+	// Go to the chosen category.
+	while (i<cat) {
+		if (listavocab->pcat)
+			i++;
+		if (i<cat)
+			listavocab = listavocab->psiguiente;
+	}
+	
+	return listavocab;
+}
+
+vocab_t * go_to_item(vocab_t *listavocab, int cat, int item) {
+	
+	int i=0;
+	listavocab = go_to_cat(listavocab, cat);
+	
+	for (i=0;i<item;i++)
+		listavocab = listavocab->psiguiente;
+		
+	return listavocab;
+	
+}
+
+// Return 0 if lista is empty. Return -1 if input's value is invalid.
+int select_cat(vocab_t *listavocab, int cat, pantalla_t *pant, char texto[]) {
+	
+	int numcat = 0;
+	
+	// If previously we don't select any category...
+	if (cat <= 0) {
+		numcat = show_cat(listavocab,pant);
+
+		if (numcat>0) {
+			wprintw(pant->buffer,"Choose a list %s.\n\n", texto);
+			cat = 0;
+			upgrade_buffer(pant, FALSE);
+			while ((cat != 13) && (cat != 27)) {
+				wrefresh(pant->ppal);
+				 cat = wgetch(pant->menu);
+				scroll_keys(pant,cat,TRUE);				
+			}
+			
+			cat = select_item(pant, cat);
+			
+			if (cat <=0 || cat > numcat) {
+				wprintw(pant->buffer,"Category not valid.\n\n");
+				cat = -1;
+			}
+		} else
+			cat = 0;
+	}
+	upgrade_buffer(pant, FALSE);
+	wrefresh(pant->ppal);
+					
+	return cat;
+	
+}
