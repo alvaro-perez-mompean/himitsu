@@ -17,14 +17,13 @@ void init_curses(pantalla_t *pantalla) {
     (void) nonl();
 	// Take character one by one, without waiting to "\n."
     (void) cbreak();
-	//scrollok(stdscr, TRUE); /* Enable scroll */
+	scrollok(stdscr, TRUE); /* Enable scroll */
 	if (COLS <= 40 || LINES < 20) {
 		endwin();
 		printf("ERROR, terminal too small. Interface can't be built.\n\n");
 		exit(1);
 	}
 	pantalla->menu = newwin(LINES,27,0,COLS-27);
-	//pantalla->ppal = newwin(LINES,COLS-27,0,0);
 	pantalla->ppal = newwin(LINES,COLS-27,0,0);
 	pantalla->lines = LINES;
 	pantalla->ppal_cols = COLS-27;
@@ -57,16 +56,13 @@ void resize_pant(pantalla_t *pant) {
 		pant->lines = LINES;
 		pant->lines = LINES;
 		pant->ppal_cols = COLS-27;
-		//resizeterm(LINES,COLS);
 		wresize(pant->ppal, LINES,COLS-27);
 		wresize(pant->buffer, 1024,COLS-27);
-		//mvwin(pant->ppal, 0,0);
 		
 		wresize(pant->menu, LINES,27);
 		mvwin(pant->menu, 0,COLS-27);
 		
 
-		//prefresh(pant->buffer, 0, 0, 0, 0, 2048, COLS-27);
 		wrefresh(pant->menu);
 		upgrade_buffer(pant, FALSE);
 		wrefresh(pant->ppal);
@@ -80,7 +76,6 @@ void upgrade_buffer(pantalla_t *pant, bool move_cursor) {
 	pant->ppal_finbuf = getcury(pant->buffer);
 
 	copywin(pant->buffer, pant->ppal,0,0,0,0,pant->lines-1,pant->ppal_cols-1,FALSE);
-	//overwrite(pant->buffer, pant->ppal);
 	pant->ppal_pbuf = 0;
 	
 	if (move_cursor)
@@ -162,29 +157,6 @@ int select_item(pantalla_t *pant, int registro) {
 		*(char_temp+i) = '\0';
 		registro = atoi(char_temp);
 		
-		/*if (pant->cur_item) {
-			wmove(pant->ppal, getcury(pant->ppal), getcurx(pant->ppal)+1);
-			//for (i=0; mvwinch(pant->ppal,getcury(pant->ppal),getcurx(pant->ppal)+1) != '\n'; i++) {
-			for (i=0; (getcurx(pant->ppal)+1) < (getmaxx(pant->ppal)); i++) {
-				wmove(pant->ppal, getcury(pant->ppal), getcurx(pant->ppal)+1);
-				pant->cur_item = (char *)realloc(pant->cur_item,(i+2)*sizeof(char));
-				*(pant->cur_item+i) = mvwinch(pant->ppal,getcury(pant->ppal),getcurx(pant->ppal));
-			}
-			*(char_temp+i) = '\0';
-			
-			i=0;
-			while (*(pant->cur_item+i) != '\0')
-				i++;
-			
-			i--;
-			while (*(pant->cur_item+i) == ' ' || i<0)
-				i--;
-				
-			*(pant->cur_item+i+1) = '\0';
-			
-			
-			
-		}*/
 		
 	} else
 		registro = 0;
