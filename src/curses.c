@@ -19,9 +19,7 @@ void init_curses(pantalla_t *pantalla) {
     (void) cbreak();
 	scrollok(stdscr, TRUE); /* Enable scroll */
 	if (COLS <= 40 || LINES < 20) {
-		endwin();
-		printf("ERROR, terminal too small. Interface can't be built.\n\n");
-		exit(1);
+		exit_mem(EXIT_FAILURE, "ERROR, terminal too small. Interface can't be built.");
 	}
 	pantalla->menu = newwin(LINES,27,0,COLS-27);
 	pantalla->ppal = newwin(LINES,COLS-27,0,0);

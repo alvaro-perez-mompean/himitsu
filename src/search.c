@@ -18,18 +18,18 @@ int search(vocab_t **listavocab, char search[], int registro, int cat, pantalla_
 	
 	// Vars for conv.
 	char *buffer, *buffer_utf8;
-	buffer = buffer_utf8 = NULL;
+	
 	char *pent, *psal;
+	FILE *edict;
 	size_t codent, codsal;
 	iconv_t desc;
 	
+	buffer = buffer_utf8 = NULL;
 	pent = psal = NULL;
 	
 	busq = NULL;
 	
 	// Load edict.
-	FILE *edict;
-	
 	edict = load_edict();
 	
 	tam_buffer = (longest_line(edict)+1);
@@ -148,11 +148,8 @@ int search(vocab_t **listavocab, char search[], int registro, int cat, pantalla_
 			
 	}
 		
-	if (fclose(edict) != 0) {
-		endwin();
-		printf("Error closing edict file.\n");
-		exit(1);
-	}
+	if (fclose(edict) != 0)
+		exit_mem(EXIT_FAILURE, "Error closing edict file.");
 	
 	if (resultados > 0)
 	    wprintw(pant->buffer,"\n");

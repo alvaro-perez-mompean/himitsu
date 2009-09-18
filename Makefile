@@ -2,7 +2,7 @@ OWNER=bin
 GROUP=bin
 BINDIR=/usr/bin
 
-himitsu: src/vocab.o src/learning.o src/search.o src/edict.o src/kanji.o src/curses.o src/main.o
+himitsu: src/vocab.o src/learning.o src/search.o src/kanji.o src/curses.o src/main.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
 CFLAGS = -O2 -Wall -Wextra

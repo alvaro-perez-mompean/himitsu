@@ -11,11 +11,13 @@ static void revision_state(unsigned short, pantalla_t *);
 static void show_unknow(vocab_t *, int, pantalla_t *);
 
 void revision_menu(vocab_t *listavocab, pantalla_t *pant) {
+	
+	int cat = 0, option;
+	
 	wclear(pant->menu);
 	wclear(pant->buffer);
 	upgrade_buffer(pant, FALSE);
 	wrefresh(pant->ppal);
-	int cat = 0, option;
 	option='a';
 	while (option != '0') {
 		draw_menu(pant, listavocab, cat, 1);
@@ -59,13 +61,16 @@ void revision_menu(vocab_t *listavocab, pantalla_t *pant) {
 
 static void generate_revision(vocab_t *listavocab, int cat, pantalla_t *pant) {
 
-	srand(time(NULL));
+	
 	char respuesta[256];
 	char selecc;
 	int *preguntas = NULL, *noaprend = NULL;
 	int resultados = 0, elementos = 0, numpreg, i,aciertos;
 	bool repe = false;
 	vocab_t *aux, *prepaso = listavocab;
+	
+	srand(time(NULL));
+	
 	// Clearing screen...
 	wclear(pant->ppal);
 	
@@ -259,8 +264,10 @@ void revision_state(unsigned short estado, pantalla_t *pant) {
 }
 
 void show_unknow(vocab_t *listavocab, int cat, pantalla_t *pant) {
-	wclear(pant->buffer);
+	
 	int resultados = 0;
+	
+	wclear(pant->buffer);
 	if (listavocab) {
 		
 		listavocab = go_to_cat(listavocab, cat);

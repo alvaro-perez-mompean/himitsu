@@ -9,32 +9,27 @@
 
 int main() {
 	
+	vocab_t *listavocab = NULL;
+	pantalla_t *pant;
+	
 	FILE *edict, *kanjidic;
+	
+	pant = (pantalla_t *)malloc(sizeof(pantalla_t));
 	
 	edict = kanjidic = NULL;
 	
-	edict = load_edict(edict);
-	if (fclose(edict) != 0) {
-		endwin();
-		printf("Error closing edict file.\n");
-		exit(1);
-	}
+	edict = load_edict();
+	if (fclose(edict) != 0)
+		exit_mem(EXIT_FAILURE, "Error closing edict file.");
 	
-	kanjidic = load_kanjidic(kanjidic);
-	if (fclose(kanjidic) != 0) {
-		endwin();
-		printf("Error closing kannidic file.\n");
-		exit(1);
-	}
+	kanjidic = load_kanjidic();
+	if (fclose(kanjidic) != 0)
+		exit_mem(EXIT_FAILURE, "Error closing kannidic file.");
 	
-	vocab_t *listavocab = NULL;
-	pantalla_t *pant;
-	pant = (pantalla_t *)malloc(sizeof(pantalla_t));
-	if (!pant) {
-		endwin();
-		printf("Not enough memory.\n");
-		exit(1);
-	}
+	
+	if (!pant)
+		exit_mem(EXIT_FAILURE, "Not enough memory.");
+
 
 	init_curses(pant);
 	wrefresh(pant->ppal);
@@ -380,10 +375,10 @@ void draw_menu(pantalla_t *pant, vocab_t *listavocab, int cat, int learning) {
 	
 }
 
-void exit_mem(int valor, char mensaje[]) {
+void exit_mem(int valor, const char mensaje[]) {
 	
 	endwin();
-	printf("%s. Error code %d\n", mensaje, valor);
+	printf("%s \n\n", mensaje);
 	exit(valor);
 	
 }
@@ -401,3 +396,4 @@ bool cleanstdin() {
     
     return is_empthy;
 }
+

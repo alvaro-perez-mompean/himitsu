@@ -20,12 +20,11 @@ FILE * load_kanjidic() {
 		// Check if file is in ~/.himitsu/kanjidic directory.
 		homedirkanjidic = (char *)calloc((strlen(getenv("HOME"))+strlen("/.himitsu/kanjidic"))+1,sizeof(char));
 		strcpy(homedirkanjidic,getenv("HOME"));
-		strcpy((homedirkanjidic+strlen(homedirkanjidic)),"/.himitsu/kanjidic");
+		strcat(homedirkanjidic,"/.himitsu/kanjidic");
 		kanjidic = fopen(homedirkanjidic, "r");
 		if (!kanjidic) {
-			endwin();
-			printf("\nERROR: Kanjidic not found.\nMust be at \"%s\" directory\n\n", homedirkanjidic);
-			exit(1);
+			strcat(homedirkanjidic, " not found...");
+			exit_mem(EXIT_FAILURE, homedirkanjidic);
 		}
 	}
 	
@@ -45,9 +44,14 @@ int show_kanji(vocab_t *listavocab, pantalla_t *pant) {
 	char *imitemp = NULL; // Shows meaning without keys and brackets.
 	char *kanji, *atributos, *reading, *meaning;
 	char *buffer, *buffer_utf8;
-	buffer = buffer_utf8 = NULL;
 	char *pos;
+	unsigned short heisig, strokes;
+	char *pent, *psal;
+	size_t codent, codsal;
+	iconv_t desc;
 	FILE *kanjidic;
+	
+	buffer = buffer_utf8 = NULL;
 	
 	// Load kanjidic.
 	kanjidic = load_kanjidic();
@@ -62,15 +66,13 @@ int show_kanji(vocab_t *listavocab, pantalla_t *pant) {
 	atributos = (char *)calloc(tam_buffer_atrib,sizeof(char));
 	reading = (char *)calloc(tam_buffer_atrib,sizeof(char));
 	meaning = (char *)calloc(tam_buffer_atrib,sizeof(char));
-	unsigned short heisig, strokes;
 	
 	
 	// Necesary for iconv.
 	buffer = (char *)calloc(tam_buffer,sizeof(char));
 	buffer_utf8 = (char *)calloc(tam_buffer,sizeof(char));
-	size_t codent, codsal;
-	iconv_t desc;
-	char *pent, *psal;
+	
+	
 	pent = psal = NULL;
 	
 	if (listavocab) {
@@ -145,11 +147,9 @@ int show_kanji(vocab_t *listavocab, pantalla_t *pant) {
 			
 				iconv_close(desc);
 				
-				if (fclose(kanjidic) != 0) {
-				endwin();
-					printf("Error closing kanjidic file.\n");
-					exit(1);
-				}
+				if (fclose(kanjidic) != 0)
+					exit_mem(EXIT_FAILURE, "Error closing kanjidic file.");
+					
 			}
 		} else
 		wprintw(pant->buffer,"%s doesn't contain any kanji.\n\n",listavocab->phiragana);	

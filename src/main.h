@@ -23,8 +23,6 @@ typedef struct pantalla {
 
 #ifndef __MAIN_H__
 	#define __MAIN_H__
-	#include "edict.h"
-	#define __EDICT_H__
 	#include "vocab.h"
 	#define __VOCAB_H__
 	#include "search.h"
@@ -39,5 +37,5 @@ typedef struct pantalla {
 
 int main_menu(vocab_t *, pantalla_t *);
 void draw_menu(pantalla_t *, vocab_t *, int, int);
-void exit_mem(int, char []);
+void exit_mem(int, const char []);
 bool clean_stdin();
