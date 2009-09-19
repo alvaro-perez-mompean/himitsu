@@ -1,7 +1,7 @@
 /*
  *      learning.c
  *      
- *      Copyright 2009 Álvaro P. Mompeán <apmomp@altair>
+ *      Copyright 2009 Álvaro P. Mompeán <apmomp@gmail.com>
  *      
  *      This program is free software; you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
