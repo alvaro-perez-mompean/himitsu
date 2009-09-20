@@ -51,7 +51,7 @@ int search(vocab_t **listavocab, char search[], int registro, int cat, pantalla_
 	busq = NULL;
 	
 	// Load edict.
-	edict = load_edict();
+	edict = load_edict(true);
 	
 	tam_buffer = (longest_line(edict)+1);
 	rewind(edict);

@@ -2,6 +2,10 @@ This is a Japanese study software based on ncurses for GNU/Linux and Unix-like O
 
 Edict and kanjidic files are required and must be located at ~/.himitsu
 
-ncursesw, ncursesw-dev and iconv are required.
+Wget is required to download automatically the edict and kanjidic files from the we
+b.
 
-To build an executable file type "make" from a terminal.
+Build dependences: ncursesw, ncursesw-dev and iconv.
+
+
+Type "make" to build himitsu.

@@ -27,21 +27,54 @@
 #include <sys/stat.h>
 #include "vocab.h"
 
-FILE * load_edict() {
+#define WGET_EDICT "wget http://ftp.monash.edu.au/pub/nihongo/edict -O %s"
+#define WGET_KANJIDIC "wget http://ftp.monash.edu.au/pub/nihongo/kanjidic -O %s"
+
+FILE * load_edict(bool is_edict) {
 	
 	char *homediredict = NULL;
 	FILE *edict;
-	edict = fopen("/usr/share/edict/edict", "r");
+	char *wgetstring = NULL;
+	if (is_edict)
+		edict = fopen("/usr/share/edict/edict", "r");
+	else 
+		edict = fopen("/usr/share/edict/kanjidic", "r");
 	if (!edict) {
 		// Check if file is in ~/.himitsu/edict directory.
-		homediredict = (char *)calloc((strlen(getenv("HOME"))+strlen("/.himitsu/edict"))+1,sizeof(char));
+		if (is_edict)
+			homediredict = (char *)calloc((strlen(getenv("HOME"))+strlen("/.himitsu/edict"))+1,sizeof(char));
+		else
+			homediredict = (char *)calloc((strlen(getenv("HOME"))+strlen("/.himitsu/kanjidic"))+1,sizeof(char));
 		strcpy(homediredict,getenv("HOME"));
-		strcat(homediredict,"/.himitsu/edict");
+		strcat(homediredict,"/.himitsu");
+		edict = fopen(homediredict, "r");
+	if (!edict)
+		mkdir(homediredict,0755);
+	else
+		fclose(edict);
+		
+		if (is_edict)
+			strcat(homediredict,"/edict");
+		else
+			strcat(homediredict,"/kanjidic");
 		edict = fopen(homediredict, "r");
 		if (!edict) {
-			homediredict = (char *)realloc(homediredict,(strlen(homediredict)+strlen(" not found...")+1)*sizeof(char));
-			strcat(homediredict, " not found...");
-			exit_mem(EXIT_FAILURE, homediredict);
+			if (is_edict) {
+				wgetstring = (char *)calloc(strlen(WGET_EDICT)+strlen(homediredict),sizeof(char));
+				sprintf(wgetstring, WGET_EDICT, homediredict);
+				printf("It seems that edict isn't in the system. Downloading...\n\n");
+			} else {
+				wgetstring = (char *)calloc(strlen(WGET_KANJIDIC)+strlen(homediredict),sizeof(char));
+				sprintf(wgetstring, WGET_KANJIDIC, homediredict);
+				printf("It seems that kanjidic isn't in the system. Downloading...\n\n");
+			}
+			if (system(wgetstring) != 0) {
+				remove(homediredict);
+				homediredict = (char *)realloc(homediredict,(strlen(homediredict)+strlen(" not found...")+1)*sizeof(char));
+				strcat(homediredict, " not found...");
+				exit_mem(EXIT_FAILURE, homediredict);
+			} else
+				edict = fopen(homediredict, "r");
 		}
 	}
 	
@@ -387,14 +420,14 @@ void save_vocab(vocab_t *listavocab) {
 	
 	homedir = (char *)calloc((strlen(getenv("HOME"))+strlen("/.himitsu/save"))+1,sizeof(char));
 	strcpy(homedir,getenv("HOME"));
-	strcpy((homedir+strlen(homedir)),"/.himitsu");
-	fd = fopen(homedir, "r");
+	strcat(homedir,"/.himitsu/save");
+	/*fd = fopen(homedir, "r");
 	if (!fd)
 		mkdir(homedir,0755);
 	else
 		fclose(fd);
 
-	strcpy((homedir+strlen(homedir)),"/save");
+	strcpy((homedir+strlen(homedir)),"/save");*/
 	fd=fopen(homedir,"wt");
 	if (!fd)
 		exit_mem(EXIT_FAILURE,"Error saving vocabulary file.");

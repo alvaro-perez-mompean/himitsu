@@ -39,11 +39,11 @@ int main() {
 	
 	edict = kanjidic = NULL;
 	
-	edict = load_edict();
+	edict = load_edict(true);
 	if (fclose(edict) != 0)
 		exit_mem(EXIT_FAILURE, "Error closing edict file.");
 	
-	kanjidic = load_kanjidic();
+	kanjidic = load_edict(false);
 	if (fclose(kanjidic) != 0)
 		exit_mem(EXIT_FAILURE, "Error closing kannidic file.");
 	

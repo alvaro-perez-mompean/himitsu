@@ -8,7 +8,7 @@
 	#include "curses.h"
 #endif
 
-FILE * load_edict();
+FILE * load_edict(bool);
 void load_vocab(vocab_t **);
 bool add_line_to_node(vocab_t **, char [], bool, int, unsigned short);
 void add_line(vocab_t **, FILE *archivo,int);

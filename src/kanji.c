@@ -27,36 +27,7 @@
 
 #include "kanji.h"
 
-static int longest_line_kanji(FILE *archivo);
-
-FILE * load_kanjidic() {
-
-	FILE *kanjidic;
-	char *homedirkanjidic = NULL;
-	
-	
-	
-	kanjidic = fopen("/usr/share/edict/kanjidic", "r");
-	if (!kanjidic) {
-		// Check if file is in ~/.himitsu/kanjidic directory.
-		homedirkanjidic = (char *)calloc((strlen(getenv("HOME"))+strlen("/.himitsu/kanjidic"))+1,sizeof(char));
-		strcpy(homedirkanjidic,getenv("HOME"));
-		strcat(homedirkanjidic,"/.himitsu/kanjidic");
-		kanjidic = fopen(homedirkanjidic, "r");
-		if (!kanjidic) {
-			homedirkanjidic = (char *)realloc(homedirkanjidic,(strlen(homedirkanjidic)+strlen(" not found...")+1)*sizeof(char));
-			strcat(homedirkanjidic, " not found...");
-			exit_mem(EXIT_FAILURE, homedirkanjidic);
-		}
-	}
-	
-	if (homedirkanjidic)
-		free(homedirkanjidic);
-	homedirkanjidic = NULL;
-	
-	return kanjidic;
-
-}
+static int longest_line_kanji(FILE *);
 
 
 int show_kanji(vocab_t *listavocab, pantalla_t *pant) {
@@ -76,7 +47,7 @@ int show_kanji(vocab_t *listavocab, pantalla_t *pant) {
 	buffer = buffer_utf8 = NULL;
 	
 	// Load kanjidic.
-	kanjidic = load_kanjidic();
+	kanjidic = load_edict(false);
 	
 	tam_buffer = (longest_line(kanjidic)+1);
 	rewind(kanjidic);
