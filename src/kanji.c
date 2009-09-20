@@ -44,6 +44,7 @@ FILE * load_kanjidic() {
 		strcat(homedirkanjidic,"/.himitsu/kanjidic");
 		kanjidic = fopen(homedirkanjidic, "r");
 		if (!kanjidic) {
+			homedirkanjidic = (char *)realloc(homedirkanjidic,(strlen(homedirkanjidic)+strlen(" not found...")+1)*sizeof(char));
 			strcat(homedirkanjidic, " not found...");
 			exit_mem(EXIT_FAILURE, homedirkanjidic);
 		}

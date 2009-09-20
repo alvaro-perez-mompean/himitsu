@@ -25,8 +25,6 @@
 #include <ncurses.h>
 
 #include <sys/stat.h>
-//#include <sys/types.h>
-//#include <unistd.h>
 #include "vocab.h"
 
 FILE * load_edict() {
@@ -41,6 +39,7 @@ FILE * load_edict() {
 		strcat(homediredict,"/.himitsu/edict");
 		edict = fopen(homediredict, "r");
 		if (!edict) {
+			homediredict = (char *)realloc(homediredict,(strlen(homediredict)+strlen(" not found...")+1)*sizeof(char));
 			strcat(homediredict, " not found...");
 			exit_mem(EXIT_FAILURE, homediredict);
 		}
