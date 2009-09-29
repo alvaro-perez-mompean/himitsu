@@ -27,4 +27,4 @@ vocab_t * go_to_cat(vocab_t *, int);
 vocab_t * go_to_item(vocab_t *, int, int);
 int select_cat(vocab_t *, int, pantalla_t *, const char []);
 int import_file(vocab_t **, const char []);
-void export_file(vocab_t *, pantalla_t *);
+int export_file(vocab_t *, pantalla_t *);

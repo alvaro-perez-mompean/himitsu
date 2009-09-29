@@ -880,16 +880,16 @@ int import_file(vocab_t **listavocab, const char param[]) {
 
 int export_file(vocab_t *listavocab, pantalla_t *pant) {
 	
-	int cat;
+	int cat, num_nodes;
 	
 	cat = select_cat(listavocab, 0,  pant, "to export");
 	
 	if ((cat > 0) && (show_vocab(listavocab, cat, pant, false) > 0 ))
-		return EXIT_SUCCESS;
+		num_nodes = 0;
 		
 		// This function isn't implemented yet.
 		
-	
+	return num_nodes;
 	
 	
 }
