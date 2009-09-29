@@ -134,7 +134,7 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 			} else if (opcion == 'e') {
 				wclear(pant->buffer);
 				// This function isn't implemented yet.
-				export_file(listavocab, pant);
+				//export_file(listavocab, pant);
 			
 			
 			// Review mode.

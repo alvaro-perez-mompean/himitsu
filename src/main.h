@@ -31,8 +31,7 @@ typedef struct pantalla {
 	#include "curses.h"
 #endif
 
-#define TAMBUF 512
-#define __HIMITSU_VERSION__ "0.0.1"
+#define __HIMITSU_VERSION__ "0.0.2"
 
 
 int main_menu(vocab_t *, pantalla_t *);
