@@ -78,8 +78,10 @@ FILE * load_edict(bool is_edict) {
 		}
 	}
 	
-	if (homediredict)
+	if (homediredict) {
 		free(homediredict);
+		homediredict = NULL;
+	}
 	
 	return edict;
 }
@@ -116,17 +118,19 @@ void load_vocab(vocab_t **listavocab) {
 
 	if (fclose(vocab) != 0) 
 		exit_mem(EXIT_FAILURE,"Error closing vocabulary file.\n");
-	if (homedir)
+	if (homedir) {
 		free(homedir);
-	homedir = NULL;
+		homedir = NULL;
+	}
+	
 
 }
 
 /* This function calls "add_line_to_node" for each line of the vocab file. */
-void add_line(vocab_t **listavocab, FILE *archivo, int cat) {
+int add_line(vocab_t **listavocab, FILE *archivo, int cat) {
 
 	char *buffer;
-	
+	int num_nodes = 0;
 	unsigned short learning = 0;
 	char tipo;
 	
@@ -137,18 +141,22 @@ void add_line(vocab_t **listavocab, FILE *archivo, int cat) {
 		// It's a word.
 		if (tipo == '&') {
 			fscanf(archivo,"%hu %*c %[^\n] %*[\n]",&learning, buffer);
-			add_line_to_node(listavocab,buffer, true, cat, learning);
+			if (add_line_to_node(listavocab,buffer, true, cat, learning))
+				num_nodes++;
 		// It's a category.
 		} else if (tipo == ';') {
 			fscanf(archivo," %*c %[^\n] %*[\n]", buffer);
-			add_line_to_node(listavocab,buffer,false, cat, learning);
+			if (add_line_to_node(listavocab,buffer,false, cat, learning))
+				num_nodes++;
 		}
 	}
 	
-	if (buffer)
+	if (buffer) {
 		free(buffer);
-	buffer = NULL;
+		buffer = NULL;
+	}
 
+	return num_nodes;
 }
 
 /* This function adds a node to listavocab */
@@ -157,9 +165,9 @@ bool add_line_to_node(vocab_t **listavocab, char linea[], bool is_word, int cat,
 	bool almacenado=false;
 	int i,buno,bdos;
 	vocab_t *pnuevonodov = NULL;
+	buno = bdos = 0;
 	if (is_word) {
-		buno=0;
-		bdos=0;
+		
 		for (i=0;i<(int)strlen(linea);i++) {
 			if ((linea[i] == '[') && (buno == 0))
 				buno=i;
@@ -199,106 +207,112 @@ bool add_line_to_node(vocab_t **listavocab, char linea[], bool is_word, int cat,
 		plinea = (char *)calloc(strlen(linea)+1,sizeof(char));
 		strcpy(plinea, linea);
 	}
-	
-	if (is_word) {
-		// Reserve memory for new node.
-		pnuevonodov = (vocab_t *)malloc(sizeof(vocab_t));
-		if (!pnuevonodov)
+	// Reserve memory for new node.
+	pnuevonodov = (vocab_t *)malloc(sizeof(vocab_t));
+		if (!pnuevonodov) {
 			exit_mem(EXIT_FAILURE, "Not enough memory.");
-
-        // Reserve memory for word.
-		if (buno == bdos) {
-			if (is_word) {
-				pnuevonodov->pkanji = NULL;
-				pnuevonodov->pcat = NULL;
-			}
 		} else {
-			if (is_word) 
-				pnuevonodov->pcat = NULL;
+			if (is_word) {
+				// Reserve memory for word.
+				if (buno == bdos) {
+					if (is_word) {
+						pnuevonodov->pkanji = NULL;
+						pnuevonodov->pcat = NULL;
+					}
+				} else {
+					if (is_word) 
+						pnuevonodov->pcat = NULL;
 			
-			pnuevonodov->pkanji = (char *)malloc ((strlen(pkan)+1)*sizeof(char));
-			if (!pnuevonodov->pkanji)
-				exit_mem(EXIT_FAILURE, "Not enough memory.");
+					pnuevonodov->pkanji = (char *)malloc ((strlen(pkan)+1)*sizeof(char));
+					if (!pnuevonodov->pkanji)
+						exit_mem(EXIT_FAILURE, "Not enough memory.");
+			
+				}
+				pnuevonodov->phiragana = (char *)malloc ((strlen(phir)+1)*sizeof(char));
+				pnuevonodov->pmeaning = (char *)malloc ((strlen(pmea)+1)*sizeof(char));
+				if (!pnuevonodov->phiragana || !pnuevonodov->pmeaning)
+					exit_mem(EXIT_FAILURE, "Not enough memory.");
+			
+				if (buno != bdos)
+					strcpy(pnuevonodov->pkanji, pkan);
+				strcpy(pnuevonodov->phiragana, phir);
+				strcpy(pnuevonodov->pmeaning, pmea);
+				pnuevonodov->learning = learning;
+		
+			// It's a category.
+			} else {
+				pnuevonodov->pcat = (char *)calloc((strlen(plinea)+1),sizeof(char));
+				if (!pnuevonodov->pcat)
+					exit_mem(EXIT_FAILURE, "Not enough memory.");
+		
+				strcpy(pnuevonodov->pcat,plinea);
+				pnuevonodov->pmeaning = pnuevonodov->pkanji = pnuevonodov->phiragana = NULL;
+				pnuevonodov->learning = 0;
+			}
+	
+			// Insert element in the list.        
+			if (cat == 0) {
+				pnuevonodov->panterior = *listavocab;
+				pnuevonodov->psiguiente = NULL;
+		
+		
+				if (pnuevonodov->panterior) 
+					pnuevonodov->panterior->psiguiente = pnuevonodov;
+				*listavocab = pnuevonodov;
+				almacenado=true;
+			} else {
+				if (does_not_exist(listavocab,pnuevonodov,cat)) {
+		
+		
+					vocab_t *pnodoultimo=*listavocab, *aux;
+					pnodoultimo = go_to_cat(pnodoultimo,cat);
+		
+					// Here we are on first of the list that are looking for.
+					if (pnodoultimo->psiguiente) {
+						while (pnodoultimo->psiguiente && !pnodoultimo->psiguiente->pcat)
+							pnodoultimo = pnodoultimo->psiguiente;
+					}
+					// We add the word..
+					if (pnodoultimo->psiguiente) {
+						aux = pnodoultimo->psiguiente;
+						aux->panterior = pnuevonodov;
+						pnodoultimo->psiguiente = pnuevonodov;
+						pnuevonodov->panterior = pnodoultimo;
+						pnuevonodov->psiguiente = aux;
+					} else {
+						pnuevonodov->panterior = pnodoultimo;
+						pnuevonodov->psiguiente = NULL;
+						pnodoultimo->psiguiente = pnuevonodov;
+					}
+		
+					while (pnuevonodov->psiguiente)
+						pnuevonodov = pnuevonodov->psiguiente;
+					*listavocab = pnuevonodov;
+					almacenado=true;
+				} else 
+					almacenado=false;
+			
+			}
 			
 		}
-		pnuevonodov->phiragana = (char *)malloc ((strlen(phir)+1)*sizeof(char));
-		pnuevonodov->pmeaning = (char *)malloc ((strlen(pmea)+1)*sizeof(char));
-		if (!pnuevonodov->phiragana || !pnuevonodov->pmeaning)
-			exit_mem(EXIT_FAILURE, "Not enough memory.");
-			
-		if (buno != bdos)
-			strcpy(pnuevonodov->pkanji, pkan);
-		strcpy(pnuevonodov->phiragana, phir);
-		strcpy(pnuevonodov->pmeaning, pmea);
-		pnuevonodov->learning = learning;
-		
-		// It's a category.
-	} else {
-		pnuevonodov = (vocab_t *)malloc(sizeof(vocab_t));
-		if (!pnuevonodov)
-			exit_mem(EXIT_FAILURE, "Not enough memory.");
 
-		pnuevonodov->pcat = (char *)calloc((strlen(plinea)+1),sizeof(char));
-		if (!pnuevonodov->pcat)
-			exit_mem(EXIT_FAILURE, "Not enough memory.");
-		
-		strcpy(pnuevonodov->pcat,plinea);
-		pnuevonodov->pmeaning = pnuevonodov->pkanji = pnuevonodov->phiragana = NULL;
-		pnuevonodov->learning = 0;
+	if (pkan) {
+		free(pkan);
+		pkan = NULL;
+	}
+	if (phir) {
+		free(phir);
+		phir = NULL;
+	}
+	if (pmea) {
+		free(pmea);
+		pmea = NULL;
+	}
+	if (plinea) {
+		free(plinea);
+		plinea = NULL;
 	}
 	
-	// Insert element in the list.        
-	if (cat == 0) {
-		pnuevonodov->panterior = *listavocab;
-		pnuevonodov->psiguiente = NULL;
-		
-		
-		if (pnuevonodov->panterior) 
-			pnuevonodov->panterior->psiguiente = pnuevonodov;
-		*listavocab = pnuevonodov;
-	} else {
-		if (add_vocab(listavocab,pnuevonodov,cat)) {
-		
-		
-			vocab_t *pnodoultimo=*listavocab, *aux;
-			pnodoultimo = go_to_cat(pnodoultimo,cat);
-		
-			// Here we are on first of the list that are looking for.
-			if (pnodoultimo->psiguiente) {
-				while (pnodoultimo->psiguiente && !pnodoultimo->psiguiente->pcat)
-					pnodoultimo = pnodoultimo->psiguiente;
-			}
-			// We add the word..
-			if (pnodoultimo->psiguiente) {
-				aux = pnodoultimo->psiguiente;
-				aux->panterior = pnuevonodov;
-				pnodoultimo->psiguiente = pnuevonodov;
-				pnuevonodov->panterior = pnodoultimo;
-				pnuevonodov->psiguiente = aux;
-			} else {
-				pnuevonodov->panterior = pnodoultimo;
-				pnuevonodov->psiguiente = NULL;
-				pnodoultimo->psiguiente = pnuevonodov;
-			}
-		
-			while (pnuevonodov->psiguiente)
-				pnuevonodov = pnuevonodov->psiguiente;
-			*listavocab = pnuevonodov;
-			almacenado=true;
-		} else 
-			almacenado=false;
-			
-	}
-
-	if (pkan)
-		free(pkan);
-	if (phir)
-		free(phir);
-	if (pmea)
-		free(pmea);
-	if (plinea)
-		free(plinea);
-	pkan = phir = pmea = plinea = NULL;
 	
 	return almacenado;
 
@@ -421,13 +435,7 @@ void save_vocab(vocab_t *listavocab) {
 	homedir = (char *)calloc((strlen(getenv("HOME"))+strlen("/.himitsu/save"))+1,sizeof(char));
 	strcpy(homedir,getenv("HOME"));
 	strcat(homedir,"/.himitsu/save");
-	/*fd = fopen(homedir, "r");
-	if (!fd)
-		mkdir(homedir,0755);
-	else
-		fclose(fd);
 
-	strcpy((homedir+strlen(homedir)),"/save");*/
 	fd=fopen(homedir,"wt");
 	if (!fd)
 		exit_mem(EXIT_FAILURE,"Error saving vocabulary file.");
@@ -447,8 +455,10 @@ void save_vocab(vocab_t *listavocab) {
 	}
 
 	fclose(fd);
-	if (homedir)
+	if (homedir) {
 		free(homedir);
+		homedir = NULL;
+	}
 }
 
 
@@ -491,7 +501,7 @@ void edit_vocab(vocab_t *pnodoedit, char secmea[], pantalla_t *pant) {
 
 /* This function checks that the word doesn't exist in the list */
 
-bool add_vocab(vocab_t **listavocab, vocab_t *pnuevonodov, int cat) {
+bool does_not_exist(vocab_t **listavocab, vocab_t *pnuevonodov, int cat) {
 	bool norepe = true;
 		
 	vocab_t *aux = *listavocab;
@@ -596,24 +606,25 @@ void new_cat(vocab_t **listavocab, char categoria[]) {
 
 	vocab_t *pnuevonodov = NULL;
 	pnuevonodov = (vocab_t *)malloc(sizeof(vocab_t));
-	if (!pnuevonodov)
+	if (!pnuevonodov) {
 		exit_mem(EXIT_FAILURE,"Not enough memory.");
+	} else {
+		pnuevonodov->pcat = (char *)calloc((strlen(categoria)+1),sizeof(char));
+		if (!pnuevonodov->pcat) 
+			exit_mem(EXIT_FAILURE,"Not enough memory.");
+		strcpy(pnuevonodov->pcat,categoria);
+		pnuevonodov->pmeaning = NULL;
+		pnuevonodov->pkanji = NULL;
+		pnuevonodov->phiragana = NULL;
+		pnuevonodov->learning = 0;
 
-	pnuevonodov->pcat = (char *)calloc((strlen(categoria)+1),sizeof(char));
-	if (!pnuevonodov->pcat) 
-		exit_mem(EXIT_FAILURE,"Not enough memory.");
-	strcpy(pnuevonodov->pcat,categoria);
-	pnuevonodov->pmeaning = NULL;
-	pnuevonodov->pkanji = NULL;
-	pnuevonodov->phiragana = NULL;
-	pnuevonodov->learning = 0;
+		pnuevonodov->panterior = *listavocab;
+		pnuevonodov->psiguiente = NULL;
 
-	pnuevonodov->panterior = *listavocab;
-	pnuevonodov->psiguiente = NULL;
-
-	if (pnuevonodov->panterior)
-		pnuevonodov->panterior->psiguiente = pnuevonodov;
-	*listavocab = pnuevonodov;
+		if (pnuevonodov->panterior)
+			pnuevonodov->panterior->psiguiente = pnuevonodov;
+		*listavocab = pnuevonodov;
+	}
 }
 
 
@@ -796,7 +807,7 @@ vocab_t * go_to_item(vocab_t *listavocab, int cat, int item) {
 	
 }
 
-// Return 0 if lista is empty. Return -1 if input's value is invalid.
+// select_cat() eturns 0 if lista is empty. Returns -1 if input's value is invalid.
 int select_cat(vocab_t *listavocab, int cat, pantalla_t *pant, const char texto[]) {
 	
 	int numcat = 0;
@@ -828,5 +839,57 @@ int select_cat(vocab_t *listavocab, int cat, pantalla_t *pant, const char texto[
 	wrefresh(pant->ppal);
 					
 	return cat;
+	
+}
+
+int import_file(vocab_t **listavocab, const char param[]) {
+	
+	FILE *vocab;
+	char *title_file, tipo;
+	int num_nodes = 0;
+	
+	title_file = (char *)calloc(32,sizeof(char));
+	
+	vocab = fopen(param, "r");
+	if (!vocab) {
+		printf("\"%s\" can't be loaded.\n\n", param);
+	} else { 
+		fscanf(vocab,"%c", &tipo);
+		if (tipo == ')') {
+			fscanf(vocab,"%c", &tipo);
+				if (tipo == ')') {
+					fscanf(vocab,"%[^\n]", title_file);
+					num_nodes = add_line(listavocab, vocab,0);
+						if (num_nodes == 0)
+							printf("Error: \"%s\" can't be imported", title_file);
+						else
+							printf("%d lines of \"%s (%s)\" were successfully imported!\n\n", num_nodes, param, title_file);
+				} else 
+					printf("\"%s\" isn't a valid vocab file.\n\n", param);
+		} else
+			printf("\"%s\" isn't a valid vocab file.\n\n", param);
+	}
+	
+	if (title_file) {
+		free(title_file);
+		title_file = NULL;
+	}
+	return num_nodes;
+	
+}
+
+int export_file(vocab_t *listavocab, pantalla_t *pant) {
+	
+	int cat;
+	
+	cat = select_cat(listavocab, 0,  pant, "to export");
+	
+	if ((cat > 0) && (show_vocab(listavocab, cat, pant, false) > 0 ))
+		return EXIT_SUCCESS;
+		
+		// This function isn't implemented yet.
+		
+	
+	
 	
 }

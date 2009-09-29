@@ -45,10 +45,8 @@ int search(vocab_t **listavocab, char search[], int registro, int cat, pantalla_
 	size_t codent, codsal;
 	iconv_t desc;
 	
-	buffer = buffer_utf8 = NULL;
-	pent = psal = NULL;
-	
 	busq = NULL;
+
 	
 	// Load edict.
 	edict = load_edict(true);
@@ -174,13 +172,19 @@ int search(vocab_t **listavocab, char search[], int registro, int cat, pantalla_
 	
 	if (resultados > 0)
 	    wprintw(pant->buffer,"\n");
-	if (busq)
+		
+	if (busq) {
 		free(busq);
-	if (buffer)
+		busq = NULL;
+	}
+	if (buffer) {
 		free(buffer);
-	if (buffer_utf8)
+		buffer = NULL;
+	}
+	if (buffer_utf8) {
 		free(buffer_utf8);
-	busq = buffer = buffer_utf8 = NULL;
+		buffer_utf8 = NULL;
+	}
 	
 	wprintw(pant->buffer,"\n");
 	upgrade_buffer(pant, FALSE);

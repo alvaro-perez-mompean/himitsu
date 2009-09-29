@@ -167,7 +167,6 @@ int select_item(pantalla_t *pant, int registro) {
 	char_temp = (char *)calloc(1,sizeof(char));
 	
 	if ((mvwinch(pant->ppal,getcury(pant->ppal),getcurx(pant->ppal)) == '[') && (registro != 27)) {
-		registro = 0;
 		for (i=0; mvwinch(pant->ppal,getcury(pant->ppal),getcurx(pant->ppal)+1) != ']'; i++) {
 			char_temp = (char *)realloc(char_temp,(i+2)*sizeof(char));
 			*(char_temp+i) = mvwinch(pant->ppal,getcury(pant->ppal),getcurx(pant->ppal));
@@ -180,9 +179,10 @@ int select_item(pantalla_t *pant, int registro) {
 	} else
 		registro = 0;
 		
-	if (char_temp)
+	if (char_temp) {
 		free(char_temp);
-	char_temp = NULL;
+		char_temp = NULL;
+	}
 		
 	return registro;
 }

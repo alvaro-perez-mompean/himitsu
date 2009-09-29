@@ -22,43 +22,63 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ncurses.h>
+#include <string.h>
 
 
 #include "main.h"
 
 
 
-int main() {
+int main(int argc, const char *argv[]) {
 	
+	int i, num_nodes;
+	bool import_cat = false;
 	vocab_t *listavocab = NULL;
 	pantalla_t *pant;
 	
-	FILE *edict, *kanjidic;
+	FILE *edict;
+	
+	num_nodes = 0;
+	
+	edict = NULL;
 	
 	pant = (pantalla_t *)malloc(sizeof(pantalla_t));
 	
-	edict = kanjidic = NULL;
-	
+	if (!pant)
+		exit_mem(EXIT_FAILURE, "Not enough memory.");
+		
 	edict = load_edict(true);
 	if (fclose(edict) != 0)
 		exit_mem(EXIT_FAILURE, "Error closing edict file.");
 	
-	kanjidic = load_edict(false);
-	if (fclose(kanjidic) != 0)
+	edict = load_edict(false);
+	if (fclose(edict) != 0)
 		exit_mem(EXIT_FAILURE, "Error closing kannidic file.");
-	
-	
-	if (!pant)
-		exit_mem(EXIT_FAILURE, "Not enough memory.");
 
-
-	init_curses(pant);
-	wrefresh(pant->ppal);
-	
-	
 	load_vocab(&listavocab);
 	
-	return(main_menu(listavocab, pant));
+	for (i=1;i<argc;i++) {
+		if ((!strcmp(argv[i],"--import")) && (argc > i+1 )) {
+			import_cat = true;
+			num_nodes = import_file(&listavocab, argv[i+1]);
+			
+		}
+	}
+	
+	
+	if (!import_cat) {
+		init_curses(pant);
+		if (pant) {
+			wrefresh(pant->ppal);
+			return(main_menu(listavocab, pant));
+		}
+		
+	} else if (num_nodes>0) {
+		save_vocab(listavocab);
+	} else
+		exit_mem(EXIT_FAILURE,"");
+	
+	return 0;
 	
 }
 
@@ -91,7 +111,6 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 		//while (opcion < 0 || opcion > 10) {
 		while (opcion == 'a') {
 			draw_menu(pant, listavocab, cat, 0);
-			opcion = 'a';
 			//wscanw(pant->menu,"%d",&opcion);
 			opcion = wgetch(pant->menu);
 			//clean_stdin();
@@ -102,7 +121,7 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 				wrefresh(pant->ppal);
 			}
 
-			if (((opcion < '0' || opcion > '9')) && opcion != 'r') {
+			if (((opcion < '0' || opcion > '9')) && opcion != 'r' && opcion != 'e') {
 				mvwprintw(pant->menu,16,1,"Option not valid: ",opcion);
 				opcion=11;
 			
@@ -110,7 +129,13 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 			} else if (opcion == '0') {
 				save_vocab(listavocab);
 				endwin();
-				return 0;
+				return EXIT_SUCCESS;
+			// Export.
+			} else if (opcion == 'e') {
+				wclear(pant->buffer);
+				// This function isn't implemented yet.
+				export_file(listavocab, pant);
+			
 			
 			// Review mode.
 			} else if (opcion == 'r') {

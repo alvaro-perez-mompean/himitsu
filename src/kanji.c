@@ -44,8 +44,6 @@ int show_kanji(vocab_t *listavocab, pantalla_t *pant) {
 	iconv_t desc;
 	FILE *kanjidic;
 	
-	buffer = buffer_utf8 = NULL;
-	
 	// Load kanjidic.
 	kanjidic = load_edict(false);
 	
@@ -149,23 +147,34 @@ int show_kanji(vocab_t *listavocab, pantalla_t *pant) {
 			
 	}
 	
-	if (imitemp)
+	if (imitemp) {
 		free(imitemp);
-	if (buffer)
+		imitemp = NULL;
+	}
+	if (buffer) {
 		free(buffer);
-	if (buffer_utf8)
+		buffer = NULL;
+	}
+	if (buffer_utf8) {
 		free(buffer_utf8);
-	if (kanji)
+		buffer_utf8 = NULL;
+	}
+	if (kanji) {
 		free(kanji);
-	if (atributos)
+		kanji = NULL;
+	}
+	if (atributos) {
 		free(atributos);
-	if (reading)
+		atributos = NULL;
+	}
+	if (reading) {
 		free(reading);
-	if (meaning)
+		reading = NULL;
+	}
+	if (meaning) {
 		free(meaning);
-	
-	
-	imitemp = buffer = buffer_utf8 = kanji = atributos = reading = meaning = NULL;
+		meaning = NULL;
+	}
 	
 	return resultados;
 	

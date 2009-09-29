@@ -42,7 +42,6 @@ void revision_menu(vocab_t *listavocab, pantalla_t *pant) {
 	option='a';
 	while (option != '0') {
 		draw_menu(pant, listavocab, cat, 1);
-		option = 'a';
 		option = wgetch(pant->menu);
 		// If window change its size, we resize menu and ppal.
 		if ((pant->cols != COLS) || (pant->lines != LINES)) {
@@ -192,7 +191,6 @@ static void generate_revision(vocab_t *listavocab, int cat, pantalla_t *pant) {
 								repe = true;
 							i++;
 						}
-						i=0;
 					}
 					if (!repe)
 						resultados++;
@@ -260,11 +258,14 @@ static void generate_revision(vocab_t *listavocab, int cat, pantalla_t *pant) {
 	}
 	upgrade_buffer(pant, FALSE);
 	wrefresh(pant->ppal);
-	if (preguntas)
+	if (preguntas) {
 		free(preguntas);
-	if (noaprend)
+		preguntas = NULL;
+	}
+	if (noaprend) {
 		free(noaprend);
-	preguntas = noaprend = NULL;
+		noaprend = NULL;
+	}
 			
 	
 	
