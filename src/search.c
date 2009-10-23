@@ -85,86 +85,87 @@ int search(vocab_t **listavocab, char search[], int registro, int cat, pantalla_
 			}
 		}
 		// Jump to the second line.
-		fscanf(edict,"%[^\n]%*[\n]",buffer);
-		desc = iconv_open("UTF-8", "EUC-JP");
-		wclear(pant->buffer);
-		while (fscanf(edict,"%[^\n]%*[\n]",buffer) != EOF) {
-			encont = false;
-			pent = &buffer[0];
-			psal = &buffer_utf8[0];
-			codent = strlen(buffer)*sizeof(char)+1;
-			codsal = tam_buffer*sizeof(char);
-			iconv(desc,&pent,&codent,&psal,&codsal);
+		if (fscanf(edict,"%[^\n]%*[\n]",buffer) != EOF) {
+			desc = iconv_open("UTF-8", "EUC-JP");
+			wclear(pant->buffer);
+			while (fscanf(edict,"%[^\n]%*[\n]",buffer) != EOF) {
+				encont = false;
+				pent = &buffer[0];
+				psal = &buffer_utf8[0];
+				codent = strlen(buffer)*sizeof(char)+1;
+				codsal = tam_buffer*sizeof(char);
+				iconv(desc,&pent,&codent,&psal,&codsal);
 			
-			// It's a japanese word.
-			if (japo) {
-				// It doesn't contain kanjis.
-				if (!strstr(buffer_utf8,"[")) {
-					if (strstr(buffer_utf8, busq)) {
-						// Check if the word is at the string's beginning.
-						for (x=0,conc=0;x<(int)strlen(busq);x++) {
-							if (busq[x] == *(buffer_utf8+x))
-								conc++;
+				// It's a japanese word.
+				if (japo) {
+					// It doesn't contain kanjis.
+					if (!strstr(buffer_utf8,"[")) {
+						if (strstr(buffer_utf8, busq)) {
+							// Check if the word is at the string's beginning.
+							for (x=0,conc=0;x<(int)strlen(busq);x++) {
+								if (busq[x] == *(buffer_utf8+x))
+									conc++;
+							}
+							if ( (conc == (int)strlen(busq)) && 
+							( !exac || *(buffer_utf8+strlen(busq)) == ' ') )   {
+								resultados++;
+								encont = true;
+							}		
 						}
-						if ( (conc == (int)strlen(busq)) && 
-						( !exac || *(buffer_utf8+strlen(busq)) == ' ') )   {
-							resultados++;
-							encont = true;
-						}		
+						// It contains kanjis.
+					} else {
+						if (strstr(buffer_utf8, busq)) {
+							// Check if the word is at the string's beginning.
+							for (x=0,conc=0;x<(int)strlen(busq);x++) {
+								if (busq[x] == *(buffer_utf8+x))
+									conc++;
+							}
+							// Kanji
+							if ( (conc == (int)strlen(busq)) &&
+							(!exac || *(buffer_utf8+strlen(busq)) == ' ') ) {
+								resultados++;
+								encont = true;
+							// Hiragana
+							} else if ( (*(strstr(buffer_utf8,busq)-1) == '[') &&
+							( !exac || *(strstr(buffer_utf8,busq)+strlen(busq)) == ']') ) {
+								resultados++;
+								encont = true;
+							}
+						}
 					}
-					// It contains kanjis.
+		
+				// It's an english word.
 				} else {
 					if (strstr(buffer_utf8, busq)) {
-						// Check if the word is at the string's beginning.
-						for (x=0,conc=0;x<(int)strlen(busq);x++) {
-							if (busq[x] == *(buffer_utf8+x))
-								conc++;
-						}
-						// Kanji
-						if ( (conc == (int)strlen(busq)) &&
-						(!exac || *(buffer_utf8+strlen(busq)) == ' ') ) {
-							resultados++;
-							encont = true;
-						// Hiragana
-						} else if ( (*(strstr(buffer_utf8,busq)-1) == '[') &&
-						( !exac || *(strstr(buffer_utf8,busq)+strlen(busq)) == ']') ) {
+						if ( ((*((strstr(buffer_utf8, busq))+strlen(busq)) == '/' && *((strstr(buffer_utf8, busq))-1) == ' ' && *((strstr(buffer_utf8, busq))-2) == ')') 
+						|| (*((strstr(buffer_utf8, busq))+strlen(busq)) == '/' && *((strstr(buffer_utf8, busq))-1) == '/')) ||
+						
+						(!exac && ( ( *((strstr(buffer_utf8, busq))-1) == ' ' && *((strstr(buffer_utf8, busq))-2) == ')' )
+						|| (*(strstr(buffer_utf8, busq))-1) == '/')) ) {
 							resultados++;
 							encont = true;
 						}
 					}
-				}
-				
-			// It's an english word.
-			} else {
-				if (strstr(buffer_utf8, busq)) {
-					if ( ((*((strstr(buffer_utf8, busq))+strlen(busq)) == '/' && *((strstr(buffer_utf8, busq))-1) == ' ' && *((strstr(buffer_utf8, busq))-2) == ')') 
-					|| (*((strstr(buffer_utf8, busq))+strlen(busq)) == '/' && *((strstr(buffer_utf8, busq))-1) == '/')) ||
-					
-					(!exac && ( ( *((strstr(buffer_utf8, busq))-1) == ' ' && *((strstr(buffer_utf8, busq))-2) == ')' )
-					|| (*(strstr(buffer_utf8, busq))-1) == '/')) ) {
-						resultados++;
-						encont = true;
-					}
-				}
 	
-			}
+				}
 			
-			if (encont) {
-				if (registro == 0)
-					wprintw(pant->buffer,"[%d] %s\n", resultados, buffer_utf8);					
-				else if (registro == resultados) {
-					if (add_line_to_node(listavocab,buffer_utf8,true,cat,0))
-							wprintw(pant->buffer,"Word stored correctly.\n\n");
-						else
-							wprintw(pant->buffer,"That word already exists in this list.\n\n");
+				if (encont) {
+					if (registro == 0)
+						wprintw(pant->buffer,"[%d] %s\n", resultados, buffer_utf8);					
+					else if (registro == resultados) {
+						if (add_line_to_node(listavocab,buffer_utf8,true,cat,0))
+								wprintw(pant->buffer,"Word stored correctly.\n\n");
+							else
+								wprintw(pant->buffer,"That word already exists in this list.\n\n");
 							
-						wrefresh(pant->buffer);
-				}
+							wrefresh(pant->buffer);
+					}
 	
+				}
 			}
-		}
-		iconv_close(desc);
+			iconv_close(desc);
 			
+		}
 	}
 		
 	if (fclose(edict) != 0)

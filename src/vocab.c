@@ -140,14 +140,16 @@ int add_line(vocab_t **listavocab, FILE *archivo, int cat) {
 	while (fscanf(archivo,"%c", &tipo) != EOF) {
 		// It's a word.
 		if (tipo == '&') {
-			fscanf(archivo,"%hu %*c %[^\n] %*[\n]",&learning, buffer);
-			if (add_line_to_node(listavocab,buffer, true, cat, learning))
-				num_nodes++;
+			if (fscanf(archivo,"%hu %*c %[^\n] %*[\n]",&learning, buffer) != EOF) {
+				if (add_line_to_node(listavocab,buffer, true, cat, learning))
+					num_nodes++;
+			}
 		// It's a category.
 		} else if (tipo == ';') {
-			fscanf(archivo," %*c %[^\n] %*[\n]", buffer);
-			if (add_line_to_node(listavocab,buffer,false, cat, learning))
-				num_nodes++;
+			if (fscanf(archivo," %*c %[^\n] %*[\n]", buffer) != EOF) {
+				if (add_line_to_node(listavocab,buffer,false, cat, learning))
+					num_nodes++;
+			}
 		}
 	}
 	
@@ -854,20 +856,23 @@ int import_file(vocab_t **listavocab, const char param[]) {
 	if (!vocab) {
 		printf("\"%s\" can't be loaded.\n\n", param);
 	} else { 
-		fscanf(vocab,"%c", &tipo);
-		if (tipo == ')') {
-			fscanf(vocab,"%c", &tipo);
-				if (tipo == ')') {
-					fscanf(vocab,"%[^\n]", title_file);
-					num_nodes = add_line(listavocab, vocab,0);
-						if (num_nodes == 0)
-							printf("Error: \"%s\" can't be imported", title_file);
-						else
-							printf("%d lines of \"%s (%s)\" were successfully imported!\n\n", num_nodes, param, title_file);
-				} else 
-					printf("\"%s\" isn't a valid vocab file.\n\n", param);
-		} else
-			printf("\"%s\" isn't a valid vocab file.\n\n", param);
+		if (fscanf(vocab,"%c", &tipo) != EOF) {
+			if (tipo == ')') {
+				if (fscanf(vocab,"%c", &tipo) != EOF) {
+					if (tipo == ')') {
+						if (fscanf(vocab,"%[^\n]", title_file) != EOF) {
+							num_nodes = add_line(listavocab, vocab,0);
+							if (num_nodes == 0)
+								printf("Error: \"%s\" can't be imported", title_file);
+							else
+								printf("%d lines of \"%s (%s)\" were successfully imported!\n\n", num_nodes, param, title_file);
+						}
+					} else 
+						printf("\"%s\" isn't a valid vocab file.\n\n", param);
+				}
+			} else
+				printf("\"%s\" isn't a valid vocab file.\n\n", param);
+		}
 	}
 	
 	if (title_file) {

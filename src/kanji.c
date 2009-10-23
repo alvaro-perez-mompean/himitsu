@@ -75,72 +75,73 @@ int show_kanji(vocab_t *listavocab, pantalla_t *pant) {
 		if (listavocab->pkanji) {
 			if (kanjidic) {
 				wprintw(pant->buffer,"(%s):\n\n",listavocab->pkanji);
-				fscanf(kanjidic,"%[^\n]%*[\n]",buffer);
-				desc = iconv_open("UTF-8", "EUC-JP");
-				while (fscanf(kanjidic,"%[^\n]%*[\n]",buffer) != EOF ) {
-					pent = &buffer[0];
-					psal = &buffer_utf8[0];
-					codent = strlen(buffer)*sizeof(char)+1;
-					codsal = tam_buffer*sizeof(char);
-					iconv(desc,&pent,&codent,&psal,&codsal);
-					for (i=0;i<3;i++)
-						*(kanji+i) = *(buffer_utf8+i);
-					*(kanji+i+1) = '\0';
-					sscanf(buffer_utf8,"%*s %[A-Za-z0-9 .-] %[^{] %[^\n]", atributos, reading, meaning);
+				if (fscanf(kanjidic,"%[^\n]%*[\n]",buffer) != EOF) {
+					desc = iconv_open("UTF-8", "EUC-JP");
+					while (fscanf(kanjidic,"%[^\n]%*[\n]",buffer) != EOF ) {
+						pent = &buffer[0];
+						psal = &buffer_utf8[0];
+						codent = strlen(buffer)*sizeof(char)+1;
+						codsal = tam_buffer*sizeof(char);
+						iconv(desc,&pent,&codent,&psal,&codsal);
+						for (i=0;i<3;i++)
+							*(kanji+i) = *(buffer_utf8+i);
+						*(kanji+i+1) = '\0';
+						sscanf(buffer_utf8,"%*s %[A-Za-z0-9 .-] %[^{] %[^\n]", atributos, reading, meaning);
 				
-					// Make query.
-					if (strstr(listavocab->pkanji, kanji)) {
-						resultados++;
+						// Make query.
+						if (strstr(listavocab->pkanji, kanji)) {
+							resultados++;
 						
-						// Delete names for reading.
-						if (strstr(reading,"T1"))
-							sscanf(reading, "%[^T]",reading);
+							// Delete names for reading.
+							if (strstr(reading,"T1"))
+								sscanf(reading, "%[^T]",reading);
 						
-						// Storing number of strokes.
-						pos = NULL;
-						strokes = 0;
-						pos = strstr(atributos, " S");
-						if (pos) {
-							pos = pos+2;
-						sscanf(pos,"%hu", &strokes);
+							// Storing number of strokes.
+							pos = NULL;
+							strokes = 0;
+							pos = strstr(atributos, " S");
+							if (pos) {
+								pos = pos+2;
+							sscanf(pos,"%hu", &strokes);
+							}
+						
+							// Storing heisig number.
+							pos = NULL;
+							heisig = 0;
+							pos = strstr(atributos, " L");
+							if (pos) {
+								pos = pos+2;
+							sscanf(pos,"%hu", &heisig);
+							}
+						
+							wprintw(pant->buffer,"%s:\n",kanji);
+							wprintw(pant->buffer,"[%d]Kanji: %s   Heisig: %hu  Strokes: %hu\n",
+							resultados,kanji,heisig,strokes);
+							wprintw(pant->buffer,"Reading: %s\n", reading);
+						
+							// Delete keys and brackets from "meaning".
+							pos = NULL;
+							if (!imitemp)
+								imitemp = (char *)calloc(strlen(meaning)+1,sizeof(char));
+							else 
+								imitemp = (char *)realloc(imitemp,strlen((meaning)+1)*sizeof(char));
+							pos = strstr(meaning,"{")+1;
+							sscanf(pos,"%[^}]",imitemp);
+							if ((*(imitemp) >= 97) && (*(imitemp) <= 122))
+								*(imitemp) = *(imitemp)-32;
+							while (strstr(pos,"{")) {
+								strcpy(imitemp+(strlen(imitemp)),", ");
+								pos = strstr(pos,"{")+1;
+								sscanf(pos,"%[^}]",imitemp+(strlen(imitemp)));
+							}
+							strcpy(imitemp+(strlen(imitemp)),".");
+							wprintw(pant->buffer,"Meaning: %s\n\n", imitemp);
+						
 						}
-						
-						// Storing heisig number.
-						pos = NULL;
-						heisig = 0;
-						pos = strstr(atributos, " L");
-						if (pos) {
-							pos = pos+2;
-						sscanf(pos,"%hu", &heisig);
-						}
-						
-						wprintw(pant->buffer,"%s:\n",kanji);
-						wprintw(pant->buffer,"[%d]Kanji: %s   Heisig: %hu  Strokes: %hu\n",
-						resultados,kanji,heisig,strokes);
-						wprintw(pant->buffer,"Reading: %s\n", reading);
-						
-						// Delete keys and brackets from "meaning".
-						pos = NULL;
-						if (!imitemp)
-							imitemp = (char *)calloc(strlen(meaning)+1,sizeof(char));
-						else 
-							imitemp = (char *)realloc(imitemp,strlen((meaning)+1)*sizeof(char));
-						pos = strstr(meaning,"{")+1;
-						sscanf(pos,"%[^}]",imitemp);
-						if ((*(imitemp) >= 97) && (*(imitemp) <= 122))
-							*(imitemp) = *(imitemp)-32;
-						while (strstr(pos,"{")) {
-							strcpy(imitemp+(strlen(imitemp)),", ");
-							pos = strstr(pos,"{")+1;
-							sscanf(pos,"%[^}]",imitemp+(strlen(imitemp)));
-						}
-						strcpy(imitemp+(strlen(imitemp)),".");
-						wprintw(pant->buffer,"Meaning: %s\n\n", imitemp);
-						
 					}
-				}
 			
-				iconv_close(desc);
+					iconv_close(desc);
+				}
 				
 				if (fclose(kanjidic) != 0)
 					exit_mem(EXIT_FAILURE, "Error closing kanjidic file.");
