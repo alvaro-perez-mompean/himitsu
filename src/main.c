@@ -90,16 +90,16 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 	bool buscado = false;
 	pant->cols = COLS;
 	pant->lines = LINES;
-	wprintw(pant->buffer,"\n Himitsu v%s (%s)\n",__HIMITSU_VERSION__, __TIMESTAMP__);
+	wprintw(pant->buffer,"\n Himitsu v%s\n",__HIMITSU_VERSION__);
 	wprintw(pant->buffer," Built on %s %s\n\n", __DATE__, __TIME__);
 	wprintw(pant->buffer," Copyright (C) 2008, 2009 Álvaro P. Mompeán.\n\n");
 	wprintw(pant->buffer," This program comes with ABSOLUTELY NO WARRANTY.\n");
 	wprintw(pant->buffer," This is free software, and you are welcome to redistribute it\n");
 	wprintw(pant->buffer," under certain conditions.\n\n");
-	upgrade_buffer(pant, FALSE);
+	upgrade_buffer(pant, false);
 	wrefresh(pant->ppal);
 	
-	while(TRUE) {
+	while(true) {
 		if ((pant->cols != COLS) || (pant->lines != LINES)) {
 			resize_pant(pant);
 			wrefresh(pant->ppal);
@@ -121,7 +121,8 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 				wrefresh(pant->ppal);
 			}
 
-			if (((opcion < '0' || opcion > '9')) && opcion != 'r' && opcion != 'e') {
+			if (((opcion < '0' || opcion > '9')) && opcion != 'r' && opcion != 'e'\
+				&& opcion != 2 && opcion != 3 && opcion != 82 && opcion && 83) {
 				mvwprintw(pant->menu,16,1,"Option not valid: ",opcion);
 				opcion=11;
 			
@@ -152,14 +153,14 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 					delete_cat(&listavocab, cat, pant);
 				cat = 0;
 				
-				upgrade_buffer(pant,FALSE);
+				upgrade_buffer(pant,false);
 			
 			// Create list.
 			} else if (opcion == '8') {
 				wclear(pant->buffer);
 				buscado = false;
 				wprintw(pant->buffer,"Enter the name for the new category: ");
-				upgrade_buffer(pant, TRUE);
+				upgrade_buffer(pant, true);
 				palabra[0] = '\0';
 				wscanw(pant->ppal,"%16[^\n]",palabra);
 				if (palabra[0] == '\0') {
@@ -192,7 +193,7 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 						while ((registro != 13) && (registro != 27)) {
 							wrefresh(pant->ppal);
 							registro = wgetch(pant->menu);
-							scroll_keys(pant,registro,TRUE);				
+							scroll_keys(pant,registro,true);				
 						}
 						
 							
@@ -208,7 +209,7 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 							wclear(pant->buffer);
 							wprintw(pant->buffer,"Incorrect register...\n\n");
 						}
-						upgrade_buffer(pant,FALSE);
+						upgrade_buffer(pant,false);
 					}
 				}
 			
@@ -226,7 +227,7 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 						while ((registro != 13) && (registro != 27)) {
 							wrefresh(pant->ppal);
 							registro = wgetch(pant->menu);
-							scroll_keys(pant,registro,TRUE);				
+							scroll_keys(pant,registro,true);				
 						}
 						registro = select_item(pant, registro);
 						
@@ -237,7 +238,7 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 							show_vocab_item(listavocab, pant, registro);
 							wprintw(pant->buffer,"\": ");
 							palabra[0] = '\0';
-							upgrade_buffer(pant, TRUE);
+							upgrade_buffer(pant, true);
 							wscanw(pant->ppal,"%255[^\n]",palabra);
 							if (palabra[0] == '\0') {
 								wprintw(pant->buffer,"\n\nCancelled.\n");
@@ -249,7 +250,7 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 							wprintw(pant->buffer,"Incorrect register...\n\n",resultados);
 						}
 					}
-					upgrade_buffer(pant,FALSE);
+					upgrade_buffer(pant,false);
 				}
 					
 				
@@ -268,7 +269,7 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 						while ((registro != 13) && (registro != 27)) {
 							wrefresh(pant->ppal);
 							registro = wgetch(pant->menu);
-							scroll_keys(pant,registro,TRUE);				
+							scroll_keys(pant,registro,true);				
 						}
 						
 						registro = select_item(pant, registro);
@@ -283,7 +284,7 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 							wprintw(pant->buffer,"Incorrect register...\n\n",resultados);
 						}
 					}
-					upgrade_buffer(pant,FALSE);
+					upgrade_buffer(pant,false);
 				}
 			
 			// Show list.
@@ -317,7 +318,7 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 						while ((registro != 13) && (registro != 27)) {
 							wrefresh(pant->ppal);
 							registro = wgetch(pant->menu);
-							scroll_keys(pant,registro,TRUE);				
+							scroll_keys(pant,registro,true);				
 						}
 						
 						registro = select_item(pant, registro);
@@ -329,7 +330,7 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 						}
 					}
 				}
-				upgrade_buffer(pant, FALSE);
+				upgrade_buffer(pant, false);
 			
 			// Search.
 			} else if (opcion == '1') {
@@ -339,7 +340,7 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 				wclear(pant->buffer);
 				wprintw(pant->buffer,"Enter a word to search: ");
 				palabra[0] = '\0';
-				upgrade_buffer(pant, TRUE);
+				upgrade_buffer(pant, true);
 				wscanw(pant->ppal,"%39s[^\n]",palabra);
 				printw("%s",palabra);
 				resultados=search(&listavocab,palabra,registro,0,pant);
@@ -348,12 +349,12 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 					//japo=2;
 					buscado = false;
 				}
-				upgrade_buffer(pant, FALSE);
+				upgrade_buffer(pant, false);
 				wrefresh(pant->ppal);
 				
 			// Scroll keys.
 			} else
-				scroll_keys(pant, opcion, FALSE);
+				scroll_keys(pant, (int)opcion, false);
 			
 		}
 	}
@@ -432,11 +433,11 @@ void exit_mem(int valor, const char mensaje[]) {
 // cleanstdin( clears stdin and returns if buffer is empthy.
 bool cleanstdin() {
 	char c='0';
-	bool is_empthy = TRUE;
+	bool is_empthy = true;
 	while(c != '\n') {
 		c = getchar();
 		if (c != '\n')
-			is_empthy = FALSE;
+			is_empthy = false;
 		
     }
     

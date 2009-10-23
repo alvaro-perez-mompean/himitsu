@@ -34,6 +34,7 @@ int show_kanji(vocab_t *listavocab, pantalla_t *pant) {
 	unsigned short resultados=0; // Aux is used to order kanjis.
 	int tam_buffer = 0;
 	int tam_buffer_atrib = 0;
+	int i;
 	char *imitemp = NULL; // Shows meaning without keys and brackets.
 	char *kanji, *atributos, *reading, *meaning;
 	char *buffer, *buffer_utf8;
@@ -82,7 +83,10 @@ int show_kanji(vocab_t *listavocab, pantalla_t *pant) {
 					codent = strlen(buffer)*sizeof(char)+1;
 					codsal = tam_buffer*sizeof(char);
 					iconv(desc,&pent,&codent,&psal,&codsal);
-					sscanf(buffer_utf8,"%s %[A-Za-z0-9 .-] %[^{] %[^\n]",kanji, atributos, reading, meaning);
+					for (i=0;i<3;i++)
+						*(kanji+i) = *(buffer_utf8+i);
+					*(kanji+i+1) = '\0';
+					sscanf(buffer_utf8,"%*s %[A-Za-z0-9 .-] %[^{] %[^\n]", atributos, reading, meaning);
 				
 					// Make query.
 					if (strstr(listavocab->pkanji, kanji)) {

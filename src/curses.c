@@ -102,11 +102,11 @@ void upgrade_buffer(pantalla_t *pant, bool move_cursor) {
 
 }
 
-void scroll_keys(pantalla_t *pant, char key_pressed, bool submenu) {
+void scroll_keys(pantalla_t *pant, int key_pressed, bool submenu) {
 	
 	// TODO: Implement KEY_UP, KEY_DOWN, etc... I don't know why, but these constants aren't recognized. 
 	// Up
-	if (key_pressed == 3) {
+	if (key_pressed == KEY_UP) {
 		if ((!submenu) && (pant->ppal_pbuf > 0)) {
 			copywin(pant->buffer, pant->ppal,pant->ppal_pbuf-1,0,0,0,pant->lines-1,pant->ppal_cols-1,FALSE);
 			pant->ppal_pbuf = pant->ppal_pbuf-1;
@@ -120,7 +120,7 @@ void scroll_keys(pantalla_t *pant, char key_pressed, bool submenu) {
 			
 		}
 	// Down.
-	} else if (key_pressed == 2) {
+	} else if (key_pressed == KEY_DOWN) {
 		if ((!submenu) && (pant->ppal_finbuf > (pant->ppal_pbuf+pant->lines))) {
 			copywin(pant->buffer, pant->ppal,pant->ppal_pbuf+1,0,0,0,pant->lines-1,pant->ppal_cols-1,FALSE);
 			pant->ppal_pbuf = pant->ppal_pbuf+1;
@@ -135,17 +135,17 @@ void scroll_keys(pantalla_t *pant, char key_pressed, bool submenu) {
 			
 		}
 	// Re pag.
-	} else if ((key_pressed == 83) && (pant->ppal_pbuf >= pant->lines)) {
+	} else if ((key_pressed == KEY_PPAGE) && (pant->ppal_pbuf >= pant->lines)) {
 		copywin(pant->buffer, pant->ppal,pant->ppal_pbuf-pant->lines,0,0,0,pant->lines-1,pant->ppal_cols-1,FALSE);
 		pant->ppal_pbuf = pant->ppal_pbuf-pant->lines;
-	} else if ((key_pressed == 83) && (pant->ppal_pbuf > 0)) {
+	} else if ((key_pressed == KEY_PPAGE) && (pant->ppal_pbuf > 0)) {
 		copywin(pant->buffer, pant->ppal,0,0,0,0,pant->lines-1,pant->ppal_cols-1,FALSE);
 		pant->ppal_pbuf = 0;
 	// Av pag.
-	} else if ((key_pressed == 82) && ((pant->ppal_finbuf-pant->lines) > (pant->ppal_pbuf+pant->lines))) {
+	} else if ((key_pressed == KEY_NPAGE) && ((pant->ppal_finbuf-pant->lines) > (pant->ppal_pbuf+pant->lines))) {
 		copywin(pant->buffer, pant->ppal,pant->ppal_pbuf+pant->lines,0,0,0,pant->lines-1,pant->ppal_cols-1,FALSE);
 		pant->ppal_pbuf = pant->ppal_pbuf+pant->lines;
-	} else if ((key_pressed == 82) && ((pant->ppal_finbuf > 0) && (pant->ppal_finbuf > pant->lines))) {
+	} else if ((key_pressed == KEY_NPAGE) && ((pant->ppal_finbuf > 0) && (pant->ppal_finbuf > pant->lines))) {
 		copywin(pant->buffer, pant->ppal,pant->ppal_finbuf-pant->lines,0,0,0,pant->lines-1,pant->ppal_cols-1,FALSE);
 		pant->ppal_pbuf = pant->ppal_finbuf-pant->lines;
 	}

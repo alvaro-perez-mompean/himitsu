@@ -886,6 +886,8 @@ int export_file(vocab_t *listavocab, pantalla_t *pant) {
 	
 	if ((cat > 0) && (show_vocab(listavocab, cat, pant, false) > 0 ))
 		num_nodes = 0;
+	else
+		num_nodes = -1;
 		
 		// This function isn't implemented yet.
 		
