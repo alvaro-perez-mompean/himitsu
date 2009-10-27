@@ -368,7 +368,7 @@ bool clean_stdin() {
 	while(c != '\n') {
 		c = getchar();
 		if (c != '\n')
-			is_empty = true;
+			is_empty = false;
 	}
 	return is_empty;
 }
