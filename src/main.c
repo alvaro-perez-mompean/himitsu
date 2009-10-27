@@ -360,7 +360,7 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 	}
 }
 
-// clean_stdin() cleans input's buffer and returns if buffer was empthy
+// clean_stdin() cleans input's buffer and returns if buffer was empty
 bool clean_stdin() {
 	char c='\0';
 	// With datos we return if the buffer just contains '\n'.
