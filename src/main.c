@@ -360,17 +360,17 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 	}
 }
 
-// Clear input's buffer.
+// clean_stdin() cleans input's buffer and returns if buffer was empthy
 bool clean_stdin() {
-	char c='0';
+	char c='\0';
 	// With datos we return if the buffer just contains '\n'.
-	bool datos = false;
+	bool is_empty = true;
 	while(c != '\n') {
 		c = getchar();
 		if (c != '\n')
-			datos = true;
+			is_empty = true;
 	}
-	return datos;
+	return is_empty;
 }
 
 void draw_menu(pantalla_t *pant, vocab_t *listavocab, int cat, int learning) {
@@ -430,17 +430,4 @@ void exit_mem(int valor, const char mensaje[]) {
 	
 }
 
-// cleanstdin( clears stdin and returns if buffer is empthy.
-bool cleanstdin() {
-	char c='0';
-	bool is_empthy = true;
-	while(c != '\n') {
-		c = getchar();
-		if (c != '\n')
-			is_empthy = false;
-		
-    }
-    
-    return is_empthy;
-}
 
