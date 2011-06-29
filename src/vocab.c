@@ -326,14 +326,13 @@ int longest_line(FILE *archivo) {
 	int max_line = 0;
 	char c;
 	
-	while ((c=fgetc(archivo)) != EOF) {
+	while ((c=fgetc(archivo)) != (char)EOF) {
 		if (c == '\n') {
 			if (n_line > max_line)
 				max_line = n_line;
 			n_line=0;
-		} else {
+		} else
 			n_line++;
-		}
 	}
 	
 	return max_line;
