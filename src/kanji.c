@@ -48,9 +48,9 @@ int show_kanji(vocab_t *listavocab, pantalla_t *pant) {
 	// Load kanjidic.
 	kanjidic = load_edict(false);
 	
-	tam_buffer = (longest_line(kanjidic)+1);
-	rewind(kanjidic);
-	tam_buffer_atrib = (longest_line_kanji(kanjidic)+1);
+	tam_buffer_atrib = tam_buffer = (longest_line(kanjidic)+1);
+	//rewind(kanjidic);
+	//tam_buffer_atrib = (longest_line_kanji(kanjidic)+1);
 	rewind(kanjidic);
 	
 	
@@ -180,7 +180,9 @@ int show_kanji(vocab_t *listavocab, pantalla_t *pant) {
 		free(meaning);
 		meaning = NULL;
 	}
+	
 	return resultados;
+	
 }
 
 int longest_line_kanji(FILE *archivo) {
@@ -189,7 +191,7 @@ int longest_line_kanji(FILE *archivo) {
 	int max_line = 0;
 	char c;
 	
-	while ((c=fgetc(archivo)) != (char)EOF) {
+	while ((c=fgetc(archivo)) != EOF) {
 		if ((c == '{') || (c == '\n')) {
 			if (n_line > max_line)
 				max_line = n_line;
@@ -198,5 +200,6 @@ int longest_line_kanji(FILE *archivo) {
 			n_line++;
 		}
 	}
+	
 	return max_line;
 }

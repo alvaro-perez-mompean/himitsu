@@ -177,3 +177,13 @@ void scroll_scr(pantalla_t *pant, int elem) {
 		pant->ppal_pbuf = pant->ppal_pbuf+elem;
 	}
 }
+
+void print_buffer(pantalla_t *pant, const char *str, bool new_line) {
+	wprintw(pant->buffer, str);
+	if (new_line)
+		print_new_line(pant);
+}
+
+void print_new_line(pantalla_t *pant) {
+	wprintw(pant->buffer, "\n");
+}

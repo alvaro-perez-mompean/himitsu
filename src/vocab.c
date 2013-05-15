@@ -30,6 +30,8 @@
 #define WGET_EDICT "wget http://ftp.monash.edu.au/pub/nihongo/edict -O %s"
 #define WGET_KANJIDIC "wget http://ftp.monash.edu.au/pub/nihongo/kanjidic -O %s"
 
+#define TAM_BUF 1024
+
 FILE * load_edict(bool is_edict) {
 	
 	char *homediredict = NULL;
@@ -326,13 +328,14 @@ int longest_line(FILE *archivo) {
 	int max_line = 0;
 	char c;
 	
-	while ((c=fgetc(archivo)) != (char)EOF) {
+	while ((c=fgetc(archivo)) != EOF) {
 		if (c == '\n') {
 			if (n_line > max_line)
 				max_line = n_line;
 			n_line=0;
-		} else
+		} else {
 			n_line++;
+		}
 	}
 	
 	return max_line;
@@ -356,37 +359,42 @@ if (listavocab) {
 	if (listavocab) {
 		wclear(pant->buffer);
 		pant->ppal_finbuf = getcury(pant->buffer);
-			while (listavocab && !listavocab->pcat) {
-				resultados++;
-				if (imprime) {
-					show_vocab_item(listavocab,pant,resultados);
-					wprintw(pant->buffer,"\n");
+		while (listavocab && !listavocab->pcat) {
+			resultados++;
+			if (imprime) {
+				show_vocab_item(listavocab,pant,resultados);
+			}
 
-				}
-				listavocab = listavocab->psiguiente;					
-        	}
-        	
+			listavocab = listavocab->psiguiente;					
+  	}    	
 	}
 
 }
 
-wprintw(pant->buffer,"\n");
 upgrade_buffer(pant, FALSE);
 
 return resultados;
 }
 
 void show_vocab_item(vocab_t *listavocab, pantalla_t *pant, int resultado) {
-	
+
+	char *str = NULL;
+
+	str = (char *)malloc(sizeof(char)*TAM_BUF);
+	if (!str)
+		exit_mem(EXIT_FAILURE, "Not enough memory.");
+
 	if (listavocab) {
-		if (listavocab->pkanji)
-			wprintw(pant->buffer,"[%d] %s (%s): %s",resultado,listavocab->pkanji,listavocab->phiragana,listavocab->pmeaning);
-		// Temporaly if to study english irregular verbs.
-		else if (*listavocab->phiragana >= 97 && *listavocab->phiragana <= 122)
-			wprintw(pant->buffer,"[%d] %s: %s",resultado,listavocab->pmeaning,listavocab->phiragana);
-		else
-			wprintw(pant->buffer,"[%d] %s: %s",resultado,listavocab->phiragana,listavocab->pmeaning);     	
-        	
+		if (listavocab->pkanji) {
+			snprintf(str, TAM_BUF, "[%d] %s (%s): %s",resultado,listavocab->pkanji,listavocab->phiragana,listavocab->pmeaning);
+		} else {
+			snprintf(str, TAM_BUF, "[%d] %s: %s",resultado,listavocab->phiragana,listavocab->pmeaning);
+		}
+
+		print_buffer(pant, str, true);
+
+		free(str);
+		str=NULL;
  	}
 
 }
@@ -402,7 +410,7 @@ int show_cat(vocab_t *listavocab, pantalla_t *pant) {
 	vocab_t *nnodos = NULL;
 	//wprintw(pant->ppal,"\n");
 	if (!listavocab) {
-		wprintw(pant->buffer,"There aren't vocabulary lists.\n\n");
+		print_buffer(pant, "There aren't vocabulary lists.\n\n", true);
 	} else {
 		while (listavocab->panterior)
 			listavocab = listavocab->panterior;
@@ -423,7 +431,7 @@ int show_cat(vocab_t *listavocab, pantalla_t *pant) {
 			listavocab = listavocab->psiguiente;
 		}
 	}
-	wprintw(pant->buffer,"\n");
+
 	return i;
 }
 
@@ -468,17 +476,28 @@ void save_vocab(vocab_t *listavocab) {
 void edit_vocab(vocab_t *pnodoedit, char secmea[], pantalla_t *pant) {
 
 	char opcion = '0';
+
+	char *str=NULL;
+
+	str = (char *)malloc(sizeof(char)*TAM_BUF);
+	if (!str) {
+		exit_mem(EXIT_FAILURE, "Not enough memory.");
+	}
 	
-	wprintw(pant->buffer,"\n");
+	//wprintw(pant->buffer,"\n");
+	print_new_line(pant);
 	while ((opcion != 'y') && (opcion != 'n')) {
-		if (pnodoedit->pkanji)
-			wprintw(pant->buffer,"%s (%s) -> \"%s\" ¿ok? (y/n): ",pnodoedit->pkanji,pnodoedit->phiragana,secmea);
-		else
-			wprintw(pant->buffer,"%s -> %s \"¿ok?\" (y/n): ",pnodoedit->phiragana,secmea);
+		if (pnodoedit->pkanji) {
+			snprintf(str, TAM_BUF, "%s (%s) -> \"%s\" ¿ok? (y/n): ",pnodoedit->pkanji,pnodoedit->phiragana,secmea);
+		} else {
+			snprintf(str, TAM_BUF, "%s -> %s \"¿ok?\" (y/n): ",pnodoedit->phiragana,secmea);
+		}
+
+		print_buffer(pant, str, true);
 		
 		upgrade_buffer(pant, TRUE);
 		opcion = wgetch(pant->ppal);
-		wprintw(pant->buffer,"\n");
+		print_new_line(pant);
 	}
 	
 	if (opcion == 'y') {
@@ -493,10 +512,12 @@ void edit_vocab(vocab_t *pnodoedit, char secmea[], pantalla_t *pant) {
 				exit_mem(EXIT_FAILURE,"Not enough memory.");
 		}
 		strcpy(pnodoedit->pmeaning, secmea);
-		wprintw(pant->buffer,"\nRenaming...\n");
+		print_buffer(pant, "\nRenaming...", true);
 	} else {
-		wprintw(pant->buffer,"\nCancelling...\n");
+		print_buffer(pant, "\nCancelling...", true);
 	}
+
+	free(str);
 }
 
 
@@ -540,6 +561,14 @@ void delete_vocab(vocab_t **listavocab, pantalla_t *pant) {
 
 	vocab_t *pnodoelim=*listavocab;
 	vocab_t *aux, *aux2;
+
+	char *str = NULL;
+	str = (char *)malloc(sizeof(char)*TAM_BUF);
+	
+	if (!str) {
+		exit_mem(EXIT_FAILURE, "Not enough memory.");
+	}
+
 	aux=aux2=NULL;
 	
 	while (ok != 'y' && ok != 'n') {
@@ -596,7 +625,7 @@ void delete_vocab(vocab_t **listavocab, pantalla_t *pant) {
 	} else
 		wprintw(pant->buffer,"\nCancelling...\n");
 		
-	
+	free(str);
 
 }
 
@@ -635,123 +664,135 @@ void delete_cat(vocab_t **listavocab, int categoria, pantalla_t *pant) {
 	char conf='0';
 	bool vacia = true;
 
-        vocab_t *pcatelim = *listavocab, *aux, *aux2;
-		pcatelim = go_to_cat(pcatelim,categoria);
+  vocab_t *pcatelim = *listavocab, *aux, *aux2;
+	pcatelim = go_to_cat(pcatelim,categoria);
 	
-        // Check if list is empty.
-        if (!pcatelim->psiguiente->pcat) {
-			while ((conf != 'y') && (conf != 'n')) {
-				wprintw(pant->buffer,"WARNING! \"%s\" list isn't empthy. Do you want to delete it? (y/n): ",pcatelim->pcat);
-				upgrade_buffer(pant,TRUE);
-				conf = wgetch(pant->ppal);
-				wprintw(pant->buffer,"\n");
-			}
-			vacia = false;
-        }
+	char *str = NULL;
 
+	str = (char *)malloc(sizeof(char)*TAM_BUF);
+	if (!str) {
+		exit_mem(EXIT_FAILURE, "Not enough memory.");
+	}
 
-        if (vacia) {
-			wprintw(pant->buffer,"\nDeleting...\n");
-                if (pcatelim->psiguiente && pcatelim->panterior) {
-                        aux = pcatelim->psiguiente;
-                        aux2 = pcatelim->panterior;
+	snprintf(str, TAM_BUF, "WARNING! \"%s\" list isn't empthy. Do you want to delete it? (y/n): ", pcatelim->pcat);
+  // Check if list is empty.
+  if (!pcatelim->psiguiente->pcat) {
+		while ((conf != 'y') && (conf != 'n')) {
+			print_buffer(pant, str, false);
+			upgrade_buffer(pant,TRUE);
+			conf = wgetch(pant->ppal);
+			print_new_line(pant);
+		}
+		vacia = false;
+  }
 
-                        aux->panterior = aux2;
-                        aux2->psiguiente = aux;
+  free(str);
+  str = NULL;
 
-                } else if (!pcatelim->psiguiente && pcatelim->panterior) {
-                        aux = pcatelim->panterior;
-                        aux->psiguiente = NULL;
-                        *listavocab = aux;
-                } else if (!pcatelim->panterior && pcatelim->psiguiente) {
-                        aux = pcatelim->psiguiente;
-                        aux->panterior = NULL;
-                }
+  if (vacia) {
+		print_buffer(pant,"\nDeleting...\n", false);
+    if (pcatelim->psiguiente && pcatelim->panterior) {
+    	aux = pcatelim->psiguiente;
+      aux2 = pcatelim->panterior;
 
-                if (!pcatelim->psiguiente && !pcatelim->panterior) {
-                        *listavocab = NULL;
-                }
+      aux->panterior = aux2;
+      aux2->psiguiente = aux;
+
+    } else if (!pcatelim->psiguiente && pcatelim->panterior) {
+    	aux = pcatelim->panterior;
+    	aux->psiguiente = NULL;
+			*listavocab = aux;
+		} else if (!pcatelim->panterior && pcatelim->psiguiente) {
+		
+			aux = pcatelim->psiguiente;
+			aux->panterior = NULL;
+		}
+
+  	if (!pcatelim->psiguiente && !pcatelim->panterior) {
+  		*listavocab = NULL;
+		}
 			
-			if (pcatelim->pcat) {
-				free(pcatelim->pcat);
-				pcatelim->phiragana = NULL;
-			}
-			pcatelim->psiguiente = NULL;
-			pcatelim->panterior = NULL;
-			free(pcatelim);
+		if (pcatelim->pcat) {
+			free(pcatelim->pcat);
+			pcatelim->phiragana = NULL;
+		}
+
+		pcatelim->psiguiente = NULL;
+		pcatelim->panterior = NULL;
+		free(pcatelim);
 			
 			
-        } else if ((!vacia) && (conf == 'y')) {
-			// Delete a list an its content.
-			wprintw(pant->buffer,"\nDeleting...\n");
-			if (pcatelim->psiguiente && pcatelim->panterior) {
-				aux = pcatelim->panterior;
-				aux2 = pcatelim->psiguiente;
-				while (aux2 && !aux2->pcat) {
-					if (aux2->phiragana) {
-						free(aux2->phiragana);
-						aux2->phiragana = NULL;
-					}
-					if (aux2->pkanji) {
-						free(aux2->pkanji);
-						aux2->pkanji = NULL;
-					}
-					if (aux2->pmeaning) {
-						free(aux2->pmeaning);
-						aux2->pmeaning = NULL;
-					}
-					if (aux2->psiguiente) {
-						aux2 = aux2->psiguiente;
-						free(aux2->panterior);
-					} else {
-						free(aux2);
-						aux2 = NULL;
-					}
-				
+	} else if ((!vacia) && (conf == 'y')) {
+		// Delete a list an its content.
+		print_buffer(pant,"\nDeleting...\n", false);
+		if (pcatelim->psiguiente && pcatelim->panterior) {
+			aux = pcatelim->panterior;
+			aux2 = pcatelim->psiguiente;
+			while (aux2 && !aux2->pcat) {
+				if (aux2->phiragana) {
+					free(aux2->phiragana);
+					aux2->phiragana = NULL;
 				}
-				// We are over next pcat or over NULL.
-				if (aux2) {
-					aux->psiguiente = aux2;
-					aux2->panterior = aux;
+				if (aux2->pkanji) {
+					free(aux2->pkanji);
+					aux2->pkanji = NULL;
+				}
+				if (aux2->pmeaning) {
+					free(aux2->pmeaning);
+					aux2->pmeaning = NULL;
+				}
+				if (aux2->psiguiente) {
+					aux2 = aux2->psiguiente;
+					free(aux2->panterior);
 				} else {
-					aux->psiguiente = NULL;
-					*listavocab = aux;
+					free(aux2);
+					aux2 = NULL;
 				}
+				
+			}
+			// We are over next pcat or over NULL.
+			if (aux2) {
+				aux->psiguiente = aux2;
+				aux2->panterior = aux;
+			} else {
+				aux->psiguiente = NULL;
+				*listavocab = aux;
+			}
 				
 		
-			} else if (!pcatelim->panterior && pcatelim->psiguiente) {
-				aux = pcatelim->psiguiente;
-				while (aux && !aux->pcat) {
-					if (aux->phiragana) {
-						free(aux->phiragana);
-						aux->phiragana = NULL;
-					}
-					if (aux->pkanji) {
-						free(aux->pkanji);
-						aux->pkanji = NULL;
-					}
-					if (aux->pmeaning) {
-						free(aux->pmeaning);
-						aux->pmeaning = NULL;
-					}
-					if (aux->psiguiente) {
-						aux = aux->psiguiente;
-						free(aux->panterior);
-					} else {
-						free(aux);
-						aux = NULL;
-					}
+		} else if (!pcatelim->panterior && pcatelim->psiguiente) {
+			aux = pcatelim->psiguiente;
+			while (aux && !aux->pcat) {
+				if (aux->phiragana) {
+					free(aux->phiragana);
+					aux->phiragana = NULL;
 				}
-				if (aux) {
-					aux->panterior = NULL;
+				if (aux->pkanji) {
+					free(aux->pkanji);
+					aux->pkanji = NULL;
+				}
+				if (aux->pmeaning) {
+					free(aux->pmeaning);
+					aux->pmeaning = NULL;
+				}
+				if (aux->psiguiente) {
+					aux = aux->psiguiente;
+					free(aux->panterior);
 				} else {
-					*listavocab = NULL;
+					free(aux);
+					aux = NULL;
 				}
 			}
+			if (aux) {
+				aux->panterior = NULL;
+			} else {
+				*listavocab = NULL;
+			}
+		}
 				
 			
-		} else
-			wprintw(pant->buffer,"\nCancelling...\n"); 
+	} else
+		print_buffer(pant,"\nCancelling...\n", false); 
 }
 
 // Return current category.
@@ -808,17 +849,24 @@ vocab_t * go_to_item(vocab_t *listavocab, int cat, int item) {
 	
 }
 
-// select_cat() eturns 0 if lista is empty. Returns -1 if input's value is invalid.
+// select_cat() returns 0 if lista is empty. Returns -1 if input's value is invalid.
 int select_cat(vocab_t *listavocab, int cat, pantalla_t *pant, const char texto[]) {
 	
 	int numcat = 0;
 	
+	char *str = NULL;
+	str = (char *)malloc(sizeof(char)*TAM_BUF);
+	if (!str) {
+		exit_mem(EXIT_FAILURE, "Not enough memory.");
+	}
+
+	snprintf(str, TAM_BUF, "Choose a list %s.\n\n", texto);
 	// If previously we don't select any category...
 	if (cat <= 0) {
 		numcat = show_cat(listavocab,pant);
 
 		if (numcat>0) {
-			wprintw(pant->buffer,"Choose a list %s.\n\n", texto);
+			print_buffer(pant,str, false);
 			cat = 0;
 			upgrade_buffer(pant, FALSE);
 			while ((cat != 13) && (cat != 27)) {
@@ -838,6 +886,8 @@ int select_cat(vocab_t *listavocab, int cat, pantalla_t *pant, const char texto[
 	}
 	upgrade_buffer(pant, FALSE);
 	wrefresh(pant->ppal);
+
+	free(str);
 					
 	return cat;
 	

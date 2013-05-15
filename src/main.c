@@ -196,11 +196,8 @@ int main_menu(vocab_t *listavocab, pantalla_t *pant) {
 							scroll_keys(pant,registro,true);				
 						}
 						
-							
-						//registro = select_item(pant, chartemp, registro);
 						registro = select_item(pant, registro);
-							
-							
+								
 						if ((registro <= resultados) && (registro > 0)) {
 							wclear(pant->buffer);
 							listavocab = go_to_item(listavocab, cat, registro);
@@ -365,11 +362,14 @@ bool clean_stdin() {
 	char c='\0';
 	// With datos we return if the buffer just contains '\n'.
 	bool is_empty = true;
-	while(c != '\n') {
-		c = getchar();
-		if (c != '\n')
-			is_empty = false;
-	}
+  
+  do {
+    c = getchar();
+    if (c != '\n')
+      is_empty = false;
+  } while(c != '\n');
+  
+
 	return is_empty;
 }
 

@@ -27,6 +27,8 @@
 #include "search.h"
 #include <iconv.h>
 
+ #define TAM_BUF 1024
+
 /*This function searches for a word and adds it to a list.*/
 int search(vocab_t **listavocab, char search[], int registro, int cat, pantalla_t *pant) {
 	
@@ -56,6 +58,12 @@ int search(vocab_t **listavocab, char search[], int registro, int cat, pantalla_
 	
 	buffer = (char *)malloc(tam_buffer*sizeof(char));
 	buffer_utf8 = (char *)malloc(tam_buffer*sizeof(char));
+
+	char *str = NULL;
+	str = (char *)malloc(sizeof(char)*TAM_BUF);
+	if (!str){
+		exit_mem(EXIT_FAILURE, "Not enough memory.");
+	}
 	
 	
 	
@@ -150,13 +158,16 @@ int search(vocab_t **listavocab, char search[], int registro, int cat, pantalla_
 				}
 			
 				if (encont) {
-					if (registro == 0)
-						wprintw(pant->buffer,"[%d] %s\n", resultados, buffer_utf8);					
+					if (registro == 0) {
+						snprintf(str, TAM_BUF, "[%d] %s", resultados, buffer_utf8);
+						print_buffer(pant, str, true);				
+					}
+						
 					else if (registro == resultados) {
 						if (add_line_to_node(listavocab,buffer_utf8,true,cat,0))
-								wprintw(pant->buffer,"Word stored correctly.\n\n");
+								print_buffer(pant,"Word stored correctly.", true);
 							else
-								wprintw(pant->buffer,"That word already exists in this list.\n\n");
+								print_buffer(pant,"That word already exists in this list.", true);
 							
 							wrefresh(pant->buffer);
 					}
@@ -172,7 +183,7 @@ int search(vocab_t **listavocab, char search[], int registro, int cat, pantalla_
 		exit_mem(EXIT_FAILURE, "Error closing edict file.");
 	
 	if (resultados > 0)
-	    wprintw(pant->buffer,"\n");
+		print_new_line(pant);
 		
 	if (busq) {
 		free(busq);
@@ -187,8 +198,8 @@ int search(vocab_t **listavocab, char search[], int registro, int cat, pantalla_
 		buffer_utf8 = NULL;
 	}
 	
-	wprintw(pant->buffer,"\n");
-	upgrade_buffer(pant, FALSE);
+	print_new_line(pant);
+	upgrade_buffer(pant, false);
 	
 	
 	return resultados;
