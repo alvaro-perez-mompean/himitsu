@@ -34,7 +34,7 @@ typedef struct pantalla {
 #define __HIMITSU_VERSION__ "0.0.3"
 
 
-int main_menu(vocab_t *, pantalla_t *);
-void draw_menu(pantalla_t *, vocab_t *, int, int);
+int main_menu(vocab_t *);
+void draw_menu(vocab_t *, int, int);
 void exit_mem(int, const char []);
 bool clean_stdin();

@@ -69,8 +69,10 @@ void init_curses(pantalla_t *pantalla) {
 }
 
 // resize_pant() resizes "buffer", "menu" and "ppal".
-void resize_pant(pantalla_t *pant) {
+void resize_pant() {
 	
+	pantalla_t *pant = get_curses();
+
 	if (COLS > 40) {
 		pant->cols = COLS;
 		pant->lines = LINES;
@@ -84,30 +86,35 @@ void resize_pant(pantalla_t *pant) {
 		
 
 		wrefresh(pant->menu);
-		upgrade_buffer(pant, FALSE);
+		upgrade_buffer(false);
 		wrefresh(pant->ppal);
 	}
 }
 
 // upgrade_buffer() moves pant->buffer into pant->ppal.
-void upgrade_buffer(pantalla_t *pant, bool move_cursor) {
+void upgrade_buffer(bool move_cursor) {
 	
+	pantalla_t *pant = get_curses();
+
 	wclear(pant->ppal);
 	pant->ppal_finbuf = getcury(pant->buffer);
 
-	scroll_scr(pant, 0);
+	scroll_scr(0);
 	
 	if (move_cursor)
 		wmove(pant->ppal,getcury(pant->buffer),getcurx(pant->buffer));
 
 }
 
-void scroll_keys(pantalla_t *pant, int key_pressed, bool submenu) {
+void scroll_keys(int key_pressed, bool submenu) {
+
+	pantalla_t *pant = get_curses();
+
 	// Up
 	if (key_pressed == KEY_UP) {
 		if (((!submenu) && (pant->ppal_pbuf > 0))
 		|| ((pant->ppal_pbuf > 0) && !(getcury(pant->ppal) > 0)) ) {
-			scroll_scr(pant, -1);
+			scroll_scr(-1);
 		} else {
 				wmove(pant->ppal,getcury(pant->ppal)-1,0);
 		}
@@ -115,20 +122,20 @@ void scroll_keys(pantalla_t *pant, int key_pressed, bool submenu) {
 	} else if (key_pressed == KEY_DOWN) {
 		if (((!submenu) && (pant->ppal_finbuf > (pant->ppal_pbuf+pant->lines)))
 		|| (!(getcury(pant->ppal) < pant->lines-1) && (pant->ppal_finbuf > (pant->ppal_pbuf+pant->lines)))) {
-			scroll_scr(pant, 1);
+			scroll_scr(1);
 		} else {
 			wmove(pant->ppal,getcury(pant->ppal)+1,0);
 		}
 	// Re pag.
 	} else if ((key_pressed == KEY_PPAGE) && (pant->ppal_pbuf >= pant->lines)) {
-		scroll_scr(pant, -(pant->lines));
+		scroll_scr(-(pant->lines));
 	} else if ((key_pressed == KEY_PPAGE) && (pant->ppal_pbuf > 0)) {
-		scroll_scr(pant, 0);
+		scroll_scr(0);
 	// Av pag.
 	} else if ((key_pressed == KEY_NPAGE) && ((pant->ppal_finbuf-pant->lines) > (pant->ppal_pbuf+pant->lines))) {
-		scroll_scr(pant, pant->lines);
+		scroll_scr(pant->lines);
 	} else if ((key_pressed == KEY_NPAGE) && ((pant->ppal_finbuf > 0) && (pant->ppal_finbuf > pant->lines))) {
-		scroll_scr(pant, pant->ppal_finbuf);
+		scroll_scr(pant->ppal_finbuf);
 	}
 	if ((pant->cols != COLS) || (pant->lines != LINES)) {
 			resize_pant(pant);
@@ -137,8 +144,10 @@ void scroll_keys(pantalla_t *pant, int key_pressed, bool submenu) {
 }
 
 
-int select_item(pantalla_t *pant, int registro) {
+int select_item(int registro) {
 	
+	pantalla_t *pant = get_curses();
+
 	int i=0;
 	
 	char *char_temp;
@@ -165,7 +174,10 @@ int select_item(pantalla_t *pant, int registro) {
 	return registro;
 }
 
-void scroll_scr(pantalla_t *pant, int elem) {
+void scroll_scr(int elem) {
+
+	pantalla_t *pant = get_curses();
+
 	if (elem == 0) {
 		copywin(pant->buffer, pant->ppal,0,0,0,0,pant->lines-1,pant->ppal_cols-1,FALSE);
 		pant->ppal_pbuf = 0;
@@ -178,12 +190,37 @@ void scroll_scr(pantalla_t *pant, int elem) {
 	}
 }
 
-void print_buffer(pantalla_t *pant, const char *str, bool new_line) {
+void print_buffer(const char *str, bool new_line) {
+
+	pantalla_t *pant = get_curses();
+
 	wprintw(pant->buffer, str);
 	if (new_line)
-		print_new_line(pant);
+		print_buffer_new_line();
 }
 
-void print_new_line(pantalla_t *pant) {
+void print_buffer_new_line() {
+	pantalla_t *pant = get_curses();
+
 	wprintw(pant->buffer, "\n");
+}
+
+void clear_buffer() {
+	pantalla_t *pant = get_curses();
+	wclear(pant->buffer);
+	pant->ppal_finbuf = getcury(pant->buffer);
+}
+pantalla_t * get_curses() {
+
+	static pantalla_t *pant = NULL;
+
+	if (!pant) {
+		pant = (pantalla_t *)malloc(sizeof(pantalla_t));
+		init_curses(pant);
+		if (!pant) {
+			exit_mem(EXIT_FAILURE, "Not enough memory.");
+		}
+	}
+
+	return pant;
 }

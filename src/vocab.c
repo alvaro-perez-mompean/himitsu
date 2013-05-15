@@ -32,6 +32,7 @@
 
 #define TAM_BUF 1024
 
+// Loads edict or kanjiedict file
 FILE * load_edict(bool is_edict) {
 	
 	char *homediredict = NULL;
@@ -125,7 +126,6 @@ void load_vocab(vocab_t **listavocab) {
 		homedir = NULL;
 	}
 	
-
 }
 
 /* This function calls "add_line_to_node" for each line of the vocab file. */
@@ -344,12 +344,12 @@ int longest_line(FILE *archivo) {
 
 /* Show list's elements. */
 
-int show_vocab(vocab_t *listavocab, int cat, pantalla_t *pant, bool imprime) {
+int show_vocab(vocab_t *listavocab, int cat, bool imprime) {
 
 int resultados = 0;
 	
 	
-wprintw(pant->buffer,"\n");
+print_buffer_new_line();
 if (listavocab) {
 	
 	listavocab = go_to_cat(listavocab,cat);
@@ -357,12 +357,11 @@ if (listavocab) {
 
 	resultados = 0;
 	if (listavocab) {
-		wclear(pant->buffer);
-		pant->ppal_finbuf = getcury(pant->buffer);
+		clear_buffer();
 		while (listavocab && !listavocab->pcat) {
 			resultados++;
 			if (imprime) {
-				show_vocab_item(listavocab,pant,resultados);
+				show_vocab_item(listavocab,resultados);
 			}
 
 			listavocab = listavocab->psiguiente;					
@@ -371,12 +370,12 @@ if (listavocab) {
 
 }
 
-upgrade_buffer(pant, FALSE);
+upgrade_buffer(false);
 
 return resultados;
 }
 
-void show_vocab_item(vocab_t *listavocab, pantalla_t *pant, int resultado) {
+void show_vocab_item(vocab_t *listavocab, int resultado) {
 
 	char *str = NULL;
 
@@ -391,10 +390,12 @@ void show_vocab_item(vocab_t *listavocab, pantalla_t *pant, int resultado) {
 			snprintf(str, TAM_BUF, "[%d] %s: %s",resultado,listavocab->phiragana,listavocab->pmeaning);
 		}
 
-		print_buffer(pant, str, true);
+		print_buffer(str, true);
 
-		free(str);
-		str=NULL;
+		if (str) {
+			free(str);
+			str=NULL;
+		}
  	}
 
 }
@@ -403,14 +404,20 @@ void show_vocab_item(vocab_t *listavocab, pantalla_t *pant, int resultado) {
 
 /* Show vocab lists and return an int with the number of them. */
 
-int show_cat(vocab_t *listavocab, pantalla_t *pant) {
+int show_cat(vocab_t *listavocab) {
 
 	int i=0,resultados = 0;
 	
+	char *str = NULL;
+	str = (char *)malloc(sizeof(char)*TAM_BUF);
+	if (!str) {
+		exit_mem(EXIT_FAILURE, "Not enough memory.");
+	}
+
 	vocab_t *nnodos = NULL;
 	//wprintw(pant->ppal,"\n");
 	if (!listavocab) {
-		print_buffer(pant, "There aren't vocabulary lists.\n\n", true);
+		print_buffer("There aren't vocabulary lists.\n\n", true);
 	} else {
 		while (listavocab->panterior)
 			listavocab = listavocab->panterior;
@@ -426,10 +433,16 @@ int show_cat(vocab_t *listavocab, pantalla_t *pant) {
 						nnodos = nnodos->psiguiente;
 					}
 				}
-				wprintw(pant->buffer,"[%d] %s (%d)\n",i,listavocab->pcat,resultados);
+				snprintf(str, TAM_BUF, "[%d] %s (%d)",i,listavocab->pcat,resultados);
+				print_buffer(str, true);
 			}
 			listavocab = listavocab->psiguiente;
 		}
+	}
+
+	if (str) {
+		free(str);
+		str=NULL;
 	}
 
 	return i;
@@ -473,7 +486,9 @@ void save_vocab(vocab_t *listavocab) {
 
 /* Edit a word */
 
-void edit_vocab(vocab_t *pnodoedit, char secmea[], pantalla_t *pant) {
+void edit_vocab(vocab_t *pnodoedit, char secmea[]) {
+
+	pantalla_t *pant = get_curses();
 
 	char opcion = '0';
 
@@ -485,7 +500,7 @@ void edit_vocab(vocab_t *pnodoedit, char secmea[], pantalla_t *pant) {
 	}
 	
 	//wprintw(pant->buffer,"\n");
-	print_new_line(pant);
+	print_buffer_new_line();
 	while ((opcion != 'y') && (opcion != 'n')) {
 		if (pnodoedit->pkanji) {
 			snprintf(str, TAM_BUF, "%s (%s) -> \"%s\" ¿ok? (y/n): ",pnodoedit->pkanji,pnodoedit->phiragana,secmea);
@@ -493,11 +508,11 @@ void edit_vocab(vocab_t *pnodoedit, char secmea[], pantalla_t *pant) {
 			snprintf(str, TAM_BUF, "%s -> %s \"¿ok?\" (y/n): ",pnodoedit->phiragana,secmea);
 		}
 
-		print_buffer(pant, str, true);
+		print_buffer(str, true);
 		
-		upgrade_buffer(pant, TRUE);
+		upgrade_buffer(true);
 		opcion = wgetch(pant->ppal);
-		print_new_line(pant);
+		print_buffer_new_line();
 	}
 	
 	if (opcion == 'y') {
@@ -512,12 +527,14 @@ void edit_vocab(vocab_t *pnodoedit, char secmea[], pantalla_t *pant) {
 				exit_mem(EXIT_FAILURE,"Not enough memory.");
 		}
 		strcpy(pnodoedit->pmeaning, secmea);
-		print_buffer(pant, "\nRenaming...", true);
+		print_buffer("\nRenaming...", true);
 	} else {
-		print_buffer(pant, "\nCancelling...", true);
+		print_buffer("\nCancelling...", true);
 	}
-
-	free(str);
+	if (str) {
+		free(str);
+		str=NULL;
+	}
 }
 
 
@@ -555,7 +572,9 @@ bool does_not_exist(vocab_t **listavocab, vocab_t *pnuevonodov, int cat) {
 
 /* Delete a word */
 
-void delete_vocab(vocab_t **listavocab, pantalla_t *pant) {
+void delete_vocab(vocab_t **listavocab) {
+
+	pantalla_t *pant = get_curses();
 
 	char ok='0';
 
@@ -576,9 +595,9 @@ void delete_vocab(vocab_t **listavocab, pantalla_t *pant) {
 			wprintw(pant->buffer,"Do you want to delete \"%s (%s): %s\"? (y/n): ",pnodoelim->pkanji,pnodoelim->phiragana, pnodoelim->pmeaning);
 		else
 			wprintw(pant->buffer,"Do you want to delete \"%s: %s\"? (y/n): ",pnodoelim->phiragana, pnodoelim->pmeaning);
-		upgrade_buffer(pant, TRUE);
+		upgrade_buffer(true);
 		ok = wgetch(pant->ppal);
-		wprintw(pant->buffer,"\n");
+		print_buffer_new_line();
 	}
 	
 	if (ok == 'y') {
@@ -620,12 +639,15 @@ void delete_vocab(vocab_t **listavocab, pantalla_t *pant) {
 		free (pnodoelim);
 
 
-		wprintw(pant->buffer,"Word deleted correctly.\n\n");
+		print_buffer("\nWord deleted correctly.", true);
 		*listavocab = aux;
 	} else
-		wprintw(pant->buffer,"\nCancelling...\n");
-		
-	free(str);
+		print_buffer("\nCancelling...", true);
+	
+	if (str) {	
+		free(str);
+		str=NULL;
+	}
 
 }
 
@@ -659,7 +681,9 @@ void new_cat(vocab_t **listavocab, char categoria[]) {
 
 
 /* Delete a category list and its content */
-void delete_cat(vocab_t **listavocab, int categoria, pantalla_t *pant) {
+void delete_cat(vocab_t **listavocab, int categoria) {
+
+	pantalla_t *pant = get_curses();
 
 	char conf='0';
 	bool vacia = true;
@@ -678,19 +702,21 @@ void delete_cat(vocab_t **listavocab, int categoria, pantalla_t *pant) {
   // Check if list is empty.
   if (!pcatelim->psiguiente->pcat) {
 		while ((conf != 'y') && (conf != 'n')) {
-			print_buffer(pant, str, false);
-			upgrade_buffer(pant,TRUE);
+			print_buffer(str, false);
+			upgrade_buffer(true);
 			conf = wgetch(pant->ppal);
-			print_new_line(pant);
+			print_buffer_new_line();
 		}
 		vacia = false;
   }
 
-  free(str);
-  str = NULL;
+  if (str) {
+  	free(str);
+  	str = NULL;
+  }
 
   if (vacia) {
-		print_buffer(pant,"\nDeleting...\n", false);
+		print_buffer("\nDeleting...\n", false);
     if (pcatelim->psiguiente && pcatelim->panterior) {
     	aux = pcatelim->psiguiente;
       aux2 = pcatelim->panterior;
@@ -724,7 +750,7 @@ void delete_cat(vocab_t **listavocab, int categoria, pantalla_t *pant) {
 			
 	} else if ((!vacia) && (conf == 'y')) {
 		// Delete a list an its content.
-		print_buffer(pant,"\nDeleting...\n", false);
+		print_buffer("\nDeleting...\n", false);
 		if (pcatelim->psiguiente && pcatelim->panterior) {
 			aux = pcatelim->panterior;
 			aux2 = pcatelim->psiguiente;
@@ -792,17 +818,20 @@ void delete_cat(vocab_t **listavocab, int categoria, pantalla_t *pant) {
 				
 			
 	} else
-		print_buffer(pant,"\nCancelling...\n", false); 
+		print_buffer("\nCancelling...\n", false); 
 }
 
 // Return current category.
-int current_cat(vocab_t *listavocab, int cat, bool imprime, WINDOW *menu) {
+int current_cat(vocab_t *listavocab, int cat, bool imprime) {
+
+	pantalla_t *pant = get_curses();
+
 	int elementos = 0;
 	
 	listavocab = go_to_cat(listavocab,cat);
 	
 	if (imprime)
-		mvwprintw(menu,2,1,"%s ",listavocab->pcat);
+		mvwprintw(pant->menu,2,1,"%s ",listavocab->pcat);
 	if (listavocab->psiguiente) {
 		listavocab = listavocab->psiguiente;
 		elementos = 0;
@@ -812,8 +841,8 @@ int current_cat(vocab_t *listavocab, int cat, bool imprime, WINDOW *menu) {
 		}
 	}
 	if (imprime)
-		wprintw(menu,"(%d)\n",elementos);
-	
+		wprintw(pant->menu,"(%d)\n",elementos);
+
 	return elementos;
 }
 
@@ -850,8 +879,10 @@ vocab_t * go_to_item(vocab_t *listavocab, int cat, int item) {
 }
 
 // select_cat() returns 0 if lista is empty. Returns -1 if input's value is invalid.
-int select_cat(vocab_t *listavocab, int cat, pantalla_t *pant, const char texto[]) {
+int select_cat(vocab_t *listavocab, int cat, const char texto[]) {
 	
+	pantalla_t *pant = get_curses();
+
 	int numcat = 0;
 	
 	char *str = NULL;
@@ -863,28 +894,28 @@ int select_cat(vocab_t *listavocab, int cat, pantalla_t *pant, const char texto[
 	snprintf(str, TAM_BUF, "Choose a list %s.\n\n", texto);
 	// If previously we don't select any category...
 	if (cat <= 0) {
-		numcat = show_cat(listavocab,pant);
+		numcat = show_cat(listavocab);
 
 		if (numcat>0) {
-			print_buffer(pant,str, false);
+			print_buffer(str, false);
 			cat = 0;
-			upgrade_buffer(pant, FALSE);
+			upgrade_buffer(false);
 			while ((cat != 13) && (cat != 27)) {
 				wrefresh(pant->ppal);
 				 cat = wgetch(pant->menu);
-				scroll_keys(pant,cat,TRUE);				
+				scroll_keys(cat, true);				
 			}
 			
-			cat = select_item(pant, cat);
+			cat = select_item(cat);
 			
 			if (cat <=0 || cat > numcat) {
-				wprintw(pant->buffer,"Category not valid.\n\n");
+				print_buffer("Category not valid.", true);
 				cat = -1;
 			}
 		} else
 			cat = 0;
 	}
-	upgrade_buffer(pant, FALSE);
+	upgrade_buffer(false);
 	wrefresh(pant->ppal);
 
 	free(str);
@@ -932,13 +963,13 @@ int import_file(vocab_t **listavocab, const char param[]) {
 	
 }
 
-int export_file(vocab_t *listavocab, pantalla_t *pant) {
+int export_file(vocab_t *listavocab) {
 	
 	int cat, num_nodes;
 	
-	cat = select_cat(listavocab, 0,  pant, "to export");
+	cat = select_cat(listavocab, 0, "to export");
 	
-	if ((cat > 0) && (show_vocab(listavocab, cat, pant, false) > 0 ))
+	if ((cat > 0) && (show_vocab(listavocab, cat, false) > 0 ))
 		num_nodes = 0;
 	else
 		num_nodes = -1;

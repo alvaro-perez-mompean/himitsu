@@ -30,9 +30,9 @@
  #define TAM_BUF 1024
 
 /*This function searches for a word and adds it to a list.*/
-int search(vocab_t **listavocab, char search[], int registro, int cat, pantalla_t *pant) {
-	
-	
+int search(vocab_t **listavocab, char search[], int registro, int cat) {
+
+
 	int resultados=0, tam_buffer=0;
 	char *busq;
 	bool exac=true; // Partial search.
@@ -95,7 +95,8 @@ int search(vocab_t **listavocab, char search[], int registro, int cat, pantalla_
 		// Jump to the second line.
 		if (fscanf(edict,"%[^\n]%*[\n]",buffer) != EOF) {
 			desc = iconv_open("UTF-8", "EUC-JP");
-			wclear(pant->buffer);
+			//wclear(pant->buffer);
+			clear_buffer();
 			while (fscanf(edict,"%[^\n]%*[\n]",buffer) != EOF) {
 				encont = false;
 				pent = &buffer[0];
@@ -160,16 +161,16 @@ int search(vocab_t **listavocab, char search[], int registro, int cat, pantalla_
 				if (encont) {
 					if (registro == 0) {
 						snprintf(str, TAM_BUF, "[%d] %s", resultados, buffer_utf8);
-						print_buffer(pant, str, true);				
+						print_buffer(str, true);				
 					}
 						
 					else if (registro == resultados) {
 						if (add_line_to_node(listavocab,buffer_utf8,true,cat,0))
-								print_buffer(pant,"Word stored correctly.", true);
+								print_buffer("Word stored correctly.", true);
 							else
-								print_buffer(pant,"That word already exists in this list.", true);
+								print_buffer("That word already exists in this list.", true);
 							
-							wrefresh(pant->buffer);
+							//wrefresh(pant->buffer);
 					}
 	
 				}
@@ -183,7 +184,7 @@ int search(vocab_t **listavocab, char search[], int registro, int cat, pantalla_
 		exit_mem(EXIT_FAILURE, "Error closing edict file.");
 	
 	if (resultados > 0)
-		print_new_line(pant);
+		print_buffer_new_line();
 		
 	if (busq) {
 		free(busq);
@@ -198,8 +199,8 @@ int search(vocab_t **listavocab, char search[], int registro, int cat, pantalla_
 		buffer_utf8 = NULL;
 	}
 	
-	print_new_line(pant);
-	upgrade_buffer(pant, false);
+	print_buffer_new_line();
+	upgrade_buffer(false);
 	
 	
 	return resultados;

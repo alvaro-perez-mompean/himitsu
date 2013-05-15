@@ -13,5 +13,5 @@
 	#include "curses.h"
 #endif
 
-int search(vocab_t **,char [], int, int, pantalla_t *);
+int search(vocab_t **,char [], int, int);
 

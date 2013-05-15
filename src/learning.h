@@ -10,5 +10,5 @@
 
 #include "curses.h"
 
-void revision_menu(vocab_t *, pantalla_t *);
+void revision_menu(vocab_t *);
 

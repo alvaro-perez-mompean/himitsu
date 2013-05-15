@@ -27,7 +27,10 @@
 
 #include "kanji.h"
 
-int show_kanji(vocab_t *listavocab, pantalla_t *pant) {
+int show_kanji(vocab_t *listavocab) {
+
+	pantalla_t *pant = get_curses();
+
 	unsigned short resultados=0; // Aux is used to order kanjis.
 	int tam_buffer = 0;
 	int tam_buffer_atrib = 0;

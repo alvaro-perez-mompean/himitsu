@@ -4,10 +4,12 @@
 #endif
 
 void init_curses(pantalla_t *);
-void resize_pant(pantalla_t *);
-void upgrade_buffer(pantalla_t *, bool);
-void scroll_keys(pantalla_t *, int, bool);
-int select_item(pantalla_t *, int);
-void scroll_scr(pantalla_t *, int);
-void print_buffer(pantalla_t *, const char *, bool);
-void print_new_line(pantalla_t *);
+void resize_pant();
+void upgrade_buffer(bool);
+void scroll_keys(int, bool);
+int select_item(int);
+void scroll_scr(int);
+void print_buffer(const char *, bool);
+void print_buffer_new_line();
+void clear_buffer();
+pantalla_t * get_curses();

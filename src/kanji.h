@@ -13,4 +13,4 @@
 	#include "curses.h"
 #endif
 
-int show_kanji(vocab_t *, pantalla_t *);
+int show_kanji(vocab_t *);

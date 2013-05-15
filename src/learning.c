@@ -27,43 +27,45 @@
 
 #include "learning.h"
 
-static void generate_revision(vocab_t *, int, pantalla_t *);
-static void revision_state(unsigned short, pantalla_t *);
-static void show_unknow(vocab_t *, int, pantalla_t *);
+static void generate_revision(vocab_t *, int);
+static void revision_state(unsigned short);
+static void show_unknow(vocab_t *, int);
 
-void revision_menu(vocab_t *listavocab, pantalla_t *pant) {
+void revision_menu(vocab_t *listavocab) {
+
+	pantalla_t *pant = get_curses();
 	
 	int cat = 0, option;
 	
 	wclear(pant->menu);
 	wclear(pant->buffer);
-	upgrade_buffer(pant, FALSE);
+	upgrade_buffer(FALSE);
 	wrefresh(pant->ppal);
 	option='a';
 	while (option != '0') {
-		draw_menu(pant, listavocab, cat, 1);
+		draw_menu(listavocab, cat, 1);
 		option = wgetch(pant->menu);
 		// If window change its size, we resize menu and ppal.
 		if ((pant->cols != COLS) || (pant->lines != LINES)) {
 			pant->cols = COLS;
 			pant->lines = LINES;
-			resize_pant(pant);
+			resize_pant();
 		}
 		if ((option < '0') || (option > '4')) {
 			// Invalid option.
 			option='a';
 		} else if (option == '1') {
-			generate_revision(listavocab, cat,pant);
+			generate_revision(listavocab, cat);
 
 		} else if (option == '2') {
 			wclear(pant->ppal);
 			cat = 0;
-			cat = select_cat(listavocab, cat, pant, "to work with");
+			cat = select_cat(listavocab, cat, "to work with");
 				
 		} else if (option == '3') {
-			cat = select_cat(listavocab, cat, pant, "to work with");
+			cat = select_cat(listavocab, cat, "to work with");
 			if (cat > 0) {
-				show_unknow(listavocab,cat,pant);
+				show_unknow(listavocab,cat);
 				//wprintw(pant->,"\n");
 			}
 				
@@ -79,8 +81,9 @@ void revision_menu(vocab_t *listavocab, pantalla_t *pant) {
 }
 
 
-static void generate_revision(vocab_t *listavocab, int cat, pantalla_t *pant) {
+static void generate_revision(vocab_t *listavocab, int cat) {
 
+	pantalla_t *pant = get_curses();
 	
 	char respuesta[256];
 	char selecc;
@@ -94,8 +97,8 @@ static void generate_revision(vocab_t *listavocab, int cat, pantalla_t *pant) {
 	// Clearing screen...
 	wclear(pant->ppal);
 	
-	cat = select_cat(listavocab, cat, pant, "to review");
-	draw_menu(pant, listavocab, cat, 1);	
+	cat = select_cat(listavocab, cat, "to review");
+	draw_menu(listavocab, cat, 1);	
 		
 	if (cat > 0) {
 		prepaso = go_to_cat(prepaso, cat);
@@ -111,7 +114,7 @@ static void generate_revision(vocab_t *listavocab, int cat, pantalla_t *pant) {
 			selecc = '0';
 			while ((selecc != 'y') && (selecc != 'n')) {
 				wprintw(pant->buffer,"\nInclude known words? (y/n): ");
-				upgrade_buffer(pant, TRUE);
+				upgrade_buffer(TRUE);
 				selecc = wgetch(pant->ppal);
 				wprintw(pant->buffer,"\n\n");
 			}
@@ -156,7 +159,7 @@ static void generate_revision(vocab_t *listavocab, int cat, pantalla_t *pant) {
 			wprintw(pant->buffer,"How many words do you want to review? (1-%d): ",elementos);
 			numpreg = 0;
 			while (numpreg < 1 || numpreg > elementos) {
-				upgrade_buffer(pant, TRUE);
+				upgrade_buffer(TRUE);
 				wscanw(pant->ppal,"%d",&numpreg);
 				if (numpreg < 1 || numpreg > elementos)
 					wprintw(pant->buffer,"Error, enter a numbre between 1 and %d: ",elementos);
@@ -211,14 +214,14 @@ static void generate_revision(vocab_t *listavocab, int cat, pantalla_t *pant) {
 				respuesta[0] = '\0';
 				wprintw(pant->buffer,"[%d] %s.\n  Answer: ", resultados, aux->pmeaning);
 				while (respuesta[0] == '\0'){
-					upgrade_buffer(pant, TRUE);
+					upgrade_buffer(TRUE);
 					wscanw(pant->ppal,"%255[^\n]",respuesta);
 					// If window changes, we resize menu and ppal.
 					if ((pant->cols != COLS) || (pant->lines != LINES)) {
 						pant->cols = COLS;
 						pant->lines = LINES;
 						resize_pant(pant);
-						draw_menu(pant,listavocab,cat,1);
+						draw_menu(listavocab,cat,1);
 					}
 				}
 				wclear(pant->buffer);
@@ -252,11 +255,11 @@ static void generate_revision(vocab_t *listavocab, int cat, pantalla_t *pant) {
 				}
 			}
 			wprintw(pant->buffer,"State of word: ");
-			revision_state(aux->learning,pant);
+			revision_state(aux->learning);
 		}
 		wprintw(pant->buffer,"%d correct words of %d.\n\n",aciertos, numpreg);
 	}
-	upgrade_buffer(pant, FALSE);
+	upgrade_buffer(FALSE);
 	wrefresh(pant->ppal);
 	if (preguntas) {
 		free(preguntas);
@@ -272,7 +275,10 @@ static void generate_revision(vocab_t *listavocab, int cat, pantalla_t *pant) {
 	
 }
 
-void revision_state(unsigned short estado, pantalla_t *pant) {
+void revision_state(unsigned short estado) {
+
+	pantalla_t *pant = get_curses();
+
 	if (estado == 0) {
 		wprintw(pant->buffer,"Unknown");
 	} else if (estado == 1) {
@@ -285,7 +291,9 @@ void revision_state(unsigned short estado, pantalla_t *pant) {
 	wprintw(pant->buffer,"\n\n");
 }
 
-void show_unknow(vocab_t *listavocab, int cat, pantalla_t *pant) {
+void show_unknow(vocab_t *listavocab, int cat) {
+
+	pantalla_t *pant = get_curses();
 	
 	int resultados = 0;
 	
@@ -316,6 +324,6 @@ void show_unknow(vocab_t *listavocab, int cat, pantalla_t *pant) {
 		if (resultados == 0)
 			wprintw(pant->buffer,"All list's elements was learned.\n\n");
 	}
-	upgrade_buffer(pant, FALSE);
+	upgrade_buffer(FALSE);
 	wrefresh(pant->ppal);
 }
