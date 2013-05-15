@@ -27,9 +27,6 @@
 
 #include "kanji.h"
 
-static int longest_line_kanji(FILE *);
-
-
 int show_kanji(vocab_t *listavocab, pantalla_t *pant) {
 	unsigned short resultados=0; // Aux is used to order kanjis.
 	int tam_buffer = 0;
@@ -49,10 +46,7 @@ int show_kanji(vocab_t *listavocab, pantalla_t *pant) {
 	kanjidic = load_edict(false);
 	
 	tam_buffer_atrib = tam_buffer = (longest_line(kanjidic)+1);
-	//rewind(kanjidic);
-	//tam_buffer_atrib = (longest_line_kanji(kanjidic)+1);
 	rewind(kanjidic);
-	
 	
 	kanji = (char *)calloc(4,sizeof(char));
 	atributos = (char *)calloc(tam_buffer_atrib,sizeof(char));
@@ -183,23 +177,4 @@ int show_kanji(vocab_t *listavocab, pantalla_t *pant) {
 	
 	return resultados;
 	
-}
-
-int longest_line_kanji(FILE *archivo) {
-
-	int n_line = 0;
-	int max_line = 0;
-	char c;
-	
-	while ((c=fgetc(archivo)) != EOF) {
-		if ((c == '{') || (c == '\n')) {
-			if (n_line > max_line)
-				max_line = n_line;
-			n_line=0;
-		} else {
-			n_line++;
-		}
-	}
-	
-	return max_line;
 }
