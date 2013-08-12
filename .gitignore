@@ -1,0 +1,7 @@
+himitsu
+src/curses.o
+src/kanji.o
+src/learning.o
+src/main.o
+src/search.o
+src/vocab.o
