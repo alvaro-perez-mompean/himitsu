@@ -6,5 +6,8 @@ Wget is required to download automatically the edict and kanjidic files from the
 
 Build dependences: ncursesw, ncursesw-dev and iconv.
 
+To build himitsu:
 
-Type "make" to build himitsu.
+ $ ./configure
+ $ make
+
